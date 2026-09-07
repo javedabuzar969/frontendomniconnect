@@ -1,0 +1,182 @@
+// ─── Mock Data ─────────────────────────────────────────────────────────────
+// Used when VITE_MOCK_WHATSAPP=true or backend is unavailable in development.
+
+import type {
+  WhatsAppConnection,
+  Conversation,
+  Message,
+  Customer,
+} from '../types';
+
+export const MOCK_WORKSPACE_ID = 'workspace_mock_001';
+
+export const MOCK_WA_CONNECTION: WhatsAppConnection = {
+  id: 'wa_conn_mock_001',
+  workspaceId: MOCK_WORKSPACE_ID,
+  businessName: 'Acme Marketing Co.',
+  wabaId: '1234567890123456',
+  phoneNumberId: '9876543210987654',
+  displayPhoneNumber: '+1 555 123 4567',
+  status: 'active',
+  createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
+  updatedAt: new Date().toISOString(),
+};
+
+export const MOCK_CUSTOMERS: Customer[] = [
+  {
+    id: 'cust_001',
+    workspaceId: MOCK_WORKSPACE_ID,
+    name: 'Alice Johnson',
+    phone: '+12025551234',
+    avatarUrl: undefined,
+    channelType: 'WHATSAPP',
+    externalId: '+12025551234',
+    createdAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
+  },
+  {
+    id: 'cust_002',
+    workspaceId: MOCK_WORKSPACE_ID,
+    name: 'Bob Martinez',
+    phone: '+447911123456',
+    avatarUrl: undefined,
+    channelType: 'WHATSAPP',
+    externalId: '+447911123456',
+    createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
+  },
+  {
+    id: 'cust_003',
+    workspaceId: MOCK_WORKSPACE_ID,
+    name: 'Priya Sharma',
+    phone: '+919876543210',
+    avatarUrl: undefined,
+    channelType: 'WHATSAPP',
+    externalId: '+919876543210',
+    createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+  },
+];
+
+export const MOCK_CONVERSATIONS: Conversation[] = [
+  {
+    id: 'conv_001',
+    workspaceId: MOCK_WORKSPACE_ID,
+    channelType: 'WHATSAPP',
+    customerId: 'cust_001',
+    customer: MOCK_CUSTOMERS[0],
+    whatsappConnectionId: 'wa_conn_mock_001',
+    status: 'open',
+    lastMessageAt: new Date(Date.now() - 5 * 60 * 1000).toISOString(),
+    lastMessagePreview: 'Hey, I wanted to ask about the new offer 🎉',
+    unreadCount: 2,
+    createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
+  },
+  {
+    id: 'conv_002',
+    workspaceId: MOCK_WORKSPACE_ID,
+    channelType: 'WHATSAPP',
+    customerId: 'cust_002',
+    customer: MOCK_CUSTOMERS[1],
+    whatsappConnectionId: 'wa_conn_mock_001',
+    status: 'open',
+    lastMessageAt: new Date(Date.now() - 20 * 60 * 1000).toISOString(),
+    lastMessagePreview: 'Can I reschedule the demo?',
+    unreadCount: 0,
+    createdAt: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString(),
+  },
+  {
+    id: 'conv_003',
+    workspaceId: MOCK_WORKSPACE_ID,
+    channelType: 'WHATSAPP',
+    customerId: 'cust_003',
+    customer: MOCK_CUSTOMERS[2],
+    whatsappConnectionId: 'wa_conn_mock_001',
+    status: 'resolved',
+    lastMessageAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+    lastMessagePreview: 'Thanks for the help!',
+    unreadCount: 0,
+    createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
+  },
+];
+
+export const MOCK_MESSAGES: Record<string, Message[]> = {
+  conv_001: [
+    {
+      id: 'msg_001_1',
+      conversationId: 'conv_001',
+      direction: 'inbound',
+      type: 'text',
+      content: 'Hi there! 👋 I saw your ad and wanted to learn more.',
+      status: 'read',
+      externalMessageId: 'wamid.mock001',
+      sentAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
+      createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
+    },
+    {
+      id: 'msg_001_2',
+      conversationId: 'conv_001',
+      direction: 'outbound',
+      type: 'text',
+      content: 'Hello Alice! Thanks for reaching out. How can I help you today?',
+      status: 'read',
+      sentAt: new Date(Date.now() - 1.8 * 60 * 60 * 1000).toISOString(),
+      createdAt: new Date(Date.now() - 1.8 * 60 * 60 * 1000).toISOString(),
+    },
+    {
+      id: 'msg_001_3',
+      conversationId: 'conv_001',
+      direction: 'inbound',
+      type: 'text',
+      content: 'Hey, I wanted to ask about the new offer 🎉',
+      status: 'read',
+      externalMessageId: 'wamid.mock003',
+      sentAt: new Date(Date.now() - 5 * 60 * 1000).toISOString(),
+      createdAt: new Date(Date.now() - 5 * 60 * 1000).toISOString(),
+    },
+  ],
+  conv_002: [
+    {
+      id: 'msg_002_1',
+      conversationId: 'conv_002',
+      direction: 'inbound',
+      type: 'text',
+      content: 'Hello, I booked a demo for Thursday.',
+      status: 'read',
+      externalMessageId: 'wamid.mock004',
+      sentAt: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString(),
+      createdAt: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString(),
+    },
+    {
+      id: 'msg_002_2',
+      conversationId: 'conv_002',
+      direction: 'inbound',
+      type: 'text',
+      content: 'Can I reschedule the demo?',
+      status: 'delivered',
+      externalMessageId: 'wamid.mock005',
+      sentAt: new Date(Date.now() - 20 * 60 * 1000).toISOString(),
+      createdAt: new Date(Date.now() - 20 * 60 * 1000).toISOString(),
+    },
+  ],
+  conv_003: [
+    {
+      id: 'msg_003_1',
+      conversationId: 'conv_003',
+      direction: 'outbound',
+      type: 'text',
+      content: 'Hi Priya! Your order has been shipped.',
+      status: 'read',
+      sentAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
+      createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
+    },
+    {
+      id: 'msg_003_2',
+      conversationId: 'conv_003',
+      direction: 'inbound',
+      type: 'text',
+      content: 'Thanks for the help!',
+      status: 'read',
+      externalMessageId: 'wamid.mock007',
+      sentAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+      createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+    },
+  ],
+};
