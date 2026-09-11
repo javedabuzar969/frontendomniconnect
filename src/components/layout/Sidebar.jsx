@@ -4,7 +4,6 @@ import { NavLink, useNavigate } from 'react-router-dom';
 import {
   Home,
   Users,
-  Workflow,
   MessageSquare,
   Send,
   Settings,
@@ -29,8 +28,6 @@ import toast from 'react-hot-toast';
 const NAV_ITEMS = [
   { to: '/home', icon: Home, label: 'Home' },
   { to: '/contacts', icon: Users, label: 'Contacts' },
-  { to: '/automation', icon: Workflow, label: 'Automation' },
-  { to: '/omniconnect-ai', icon: 'AI', label: 'OmniConnect AI' },
   { to: '/inbox', icon: MessageSquare, label: 'Inbox' },
   { to: '/broadcasts', icon: Send, label: 'Broadcasts' },
   { to: '/settings', icon: Settings, label: 'Settings' },
