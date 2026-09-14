@@ -11,6 +11,7 @@ export function OmniConnectLogo({ className = 'w-5 h-5 text-white' }) {
 }
 
 export const ManychatLogo = OmniConnectLogo;
+export const OmniConnectLogoAlias = OmniConnectLogo;
 
 export function InstagramIcon({ className = 'w-4 h-4' }) {
   return (
@@ -150,36 +151,95 @@ export function BroadcastIllustration({ className = 'w-44 h-44' }) {
   );
 }
 
-// Custom Inbox Illustration (Stylized checkered head with speech bubbles - Screenshot 4)
-export function InboxIllustration({ className = 'w-52 h-44' }) {
+// Custom Inbox Illustration (Stylized checkered head with thought cloud and cyan stripes - Manychat Inbox)
+export function InboxIllustration({ className = 'w-64 h-52' }) {
   return (
     <div className={`relative inline-flex items-center justify-center ${className}`}>
-      <svg viewBox="0 0 240 200" fill="none" className="w-full h-full">
-        {/* Speech Cloud shape behind */}
-        <path
-          d="M155 35c24 0 43 17 43 38 0 8-3 15-8 21 4 4 9 7 15 8-7 4-15 5-23 4-8 8-20 13-33 13-24 0-43-17-43-38s19-38 46-38z"
-          fill="#BE185D"
-          opacity="0.85"
-        />
-        {/* Speech bubble lines */}
-        <rect x="175" y="52" width="60" height="9" rx="4.5" fill="#06B6D4" />
-        <rect x="175" y="69" width="60" height="9" rx="4.5" fill="#06B6D4" />
-        <rect x="175" y="86" width="60" height="9" rx="4.5" fill="#06B6D4" />
-
-        {/* Profile Head Silhouette */}
-        <g transform="translate(60, 45)">
-          {/* Head Shape */}
+      <svg viewBox="0 0 260 220" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
+        {/* Deep Magenta Thought Cloud on upper right */}
+        <g>
+          {/* Cloud base lobes */}
           <path
-            d="M50 0C25 0 8 18 8 44c0 14 6 26 15 34-4 18-12 36-23 46 20 0 38-8 48-18 7 3 14 4 22 4 28 0 50-22 50-48C120 22 89 0 50 0z"
-            fill="#D946EF"
+            d="M175 35 C162 35 152 44 148 55 C142 52 135 54 130 59 C123 66 124 77 131 83 C127 89 128 98 135 103 C142 108 152 107 157 101 C163 108 174 110 182 106 C190 101 193 92 191 85 C198 81 202 72 199 64 C197 56 190 50 182 50 C182 42 179 35 175 35 Z"
+            fill="#9D174D"
           />
-          {/* Cyan checkered / blocked pattern accents inside head */}
-          <path d="M12 35h24v24H12z" fill="#06B6D4" />
-          <path d="M36 59h24v24H36z" fill="#06B6D4" />
-          <path d="M60 35h24v24H60z" fill="#06B6D4" />
-          <path d="M36 11h24v24H36z" fill="#06B6D4" />
-          <path d="M12 83h24v24H12z" fill="#BE185D" />
-          <path d="M60 83h24v24H60z" fill="#BE185D" />
+          <circle cx="178" cy="50" r="26" fill="#9D174D" />
+          <circle cx="152" cy="65" r="22" fill="#9D174D" />
+          <circle cx="170" cy="85" r="24" fill="#9D174D" />
+          <circle cx="145" cy="88" r="18" fill="#9D174D" />
+          <circle cx="190" cy="72" r="20" fill="#9D174D" />
+
+          {/* Three Cyan Horizontal Rounded Stripes in cloud */}
+          <rect x="160" y="48" width="56" height="8" rx="4" fill="#00E5FF" />
+          <rect x="160" y="64" width="60" height="8" rx="4" fill="#00E5FF" />
+          <rect x="160" y="80" width="54" height="8" rx="4" fill="#00E5FF" />
+        </g>
+
+        {/* Head Profile Facing Right */}
+        <g transform="translate(45, 30)">
+          {/* Magenta / Pink Hair Crest on Top */}
+          <path
+            d="M48 20 C42 10 52 2 64 6 C74 9 80 18 80 28 C74 24 65 24 60 27 C56 22 51 21 48 20 Z"
+            fill="#E11D48"
+          />
+          <path
+            d="M58 24 C55 12 70 8 76 16 C82 23 79 32 72 35 C68 30 62 26 58 24 Z"
+            fill="#FB7185"
+            opacity="0.9"
+          />
+          <path
+            d="M50 22 C40 18 36 30 44 38 C49 32 50 26 50 22 Z"
+            fill="#BE185D"
+          />
+
+          {/* Checkerboard Patterned Head Profile */}
+          <g>
+            {/* Top Row / Forehead: Cyan left, Magenta right */}
+            <path d="M40 38 H64 V62 H40 Z" fill="#00E5FF" />
+            <path d="M64 38 H88 V62 H64 Z" fill="#9D174D" />
+
+            {/* Middle Row / Nose & Eye: Magenta left, Cyan right with Nose profile */}
+            <path d="M40 62 H64 V86 H40 Z" fill="#9D174D" />
+            <path
+              d="M64 62 H88 C94 62 100 68 100 74 L94 77 L88 77 V86 H64 Z"
+              fill="#00E5FF"
+            />
+
+            {/* Bottom Row / Mouth & Chin: Cyan left, Magenta right with Lips/Chin profile */}
+            <path d="M40 86 H64 V110 H40 Z" fill="#00E5FF" />
+            <path
+              d="M64 86 H88 C90 86 92 88 90 91 C88 93 88 95 91 97 C93 99 91 103 88 105 C85 107 88 110 84 110 H64 Z"
+              fill="#9D174D"
+            />
+
+            {/* Back of Head / Ear accent */}
+            <path
+              d="M26 50 C26 42 32 38 40 38 V62 H28 C26 58 26 54 26 50 Z"
+              fill="#BE185D"
+            />
+            <path
+              d="M28 62 H40 V86 H32 C29 82 28 72 28 62 Z"
+              fill="#00E5FF"
+            />
+            <path
+              d="M32 86 H40 V110 H36 C34 102 33 94 32 86 Z"
+              fill="#9D174D"
+            />
+
+            {/* Neck & Collar: Sloping down */}
+            <path
+              d="M48 110 H64 V138 C58 135 52 128 48 120 Z"
+              fill="#9D174D"
+            />
+            <path
+              d="M64 110 H80 C78 122 75 132 72 142 H56 C60 132 63 121 64 110 Z"
+              fill="#00E5FF"
+            />
+            <path
+              d="M52 136 C55 145 60 152 68 158 H46 C42 150 46 142 52 136 Z"
+              fill="#E11D48"
+            />
+          </g>
         </g>
       </svg>
     </div>

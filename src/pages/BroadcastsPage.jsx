@@ -38,7 +38,7 @@ export default function BroadcastsPage() {
   return (
     <div className="flex-1 flex flex-col bg-[#fbfbfb] min-h-0 text-slate-800 overflow-y-auto">
       {/* Top Header matching Home Page scale */}
-      <div className="px-8 sm:px-12 pt-7 pb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200/90 bg-white">
+      <div className="px-4 sm:px-8 lg:px-12 pt-5 sm:pt-7 pb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200/90 bg-white">
         <div className="flex items-center gap-3">
           <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Broadcasts</h1>
           <button
@@ -70,7 +70,7 @@ export default function BroadcastsPage() {
       </div>
 
       {/* Main Container */}
-      <div className="w-full max-w-[1400px] px-8 sm:px-12 py-8 flex flex-col items-center justify-center flex-1 pb-16">
+      <div className="w-full max-w-[1400px] px-4 sm:px-8 lg:px-12 py-6 sm:py-8 flex flex-col items-center justify-center flex-1 pb-16">
         {broadcastSent ? (
           <div className="w-full max-w-3xl bg-white border border-slate-200/90 rounded-2xl p-7 shadow-xs space-y-5 animate-fade-in">
             <div className="flex items-center justify-between pb-4 border-b border-slate-100">
@@ -101,7 +101,7 @@ export default function BroadcastsPage() {
           </div>
         ) : (
           /* Empty State Card matching Home Page spaciousness */
-          <div className="w-full max-w-4xl min-h-[520px] border border-slate-200/90 rounded-2xl flex flex-col items-center justify-center p-10 sm:p-14 bg-white shadow-2xs">
+          <div className="w-full max-w-4xl min-h-[420px] sm:min-h-[520px] border border-slate-200/90 rounded-2xl flex flex-col items-center justify-center p-6 sm:p-10 lg:p-14 bg-white shadow-2xs">
             {/* Notification Bell with flame illustration */}
             <div className="mb-6">
               <BroadcastIllustration className="w-44 h-44" />
@@ -166,7 +166,7 @@ export default function BroadcastsPage() {
               {/* Select Channel */}
               <div>
                 <label className="block font-semibold text-slate-700 text-sm mb-1.5">Select Channel</label>
-                <div className="grid grid-cols-4 gap-3">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                   {[
                     { id: 'whatsapp', name: 'WhatsApp', icon: <WhatsAppBrandIcon className="w-5 h-5" /> },
                     { id: 'instagram', name: 'Instagram', icon: <InstagramIcon className="w-5 h-5" /> },
@@ -208,7 +208,7 @@ export default function BroadcastsPage() {
               {/* Timing */}
               <div>
                 <label className="block font-semibold text-slate-700 text-sm mb-2">Delivery Time</label>
-                <div className="flex gap-6">
+                <div className="flex flex-col sm:flex-row gap-4 sm:gap-6">
                   <label className="flex items-center gap-2.5 cursor-pointer text-sm font-medium text-slate-700">
                     <input
                       type="radio"

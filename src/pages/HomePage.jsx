@@ -1,6 +1,7 @@
 // pages/HomePage.jsx
 import React, { useState } from 'react';
 import { useNavigate, useOutletContext } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 import {
   ExternalLink,
   X,
@@ -20,41 +21,52 @@ export default function HomePage() {
 
   const [bannerDismissed, setBannerDismissed] = useState(false);
   const [carouselIndex, setCarouselIndex] = useState(0);
+  const { user } = useAuth();
+  const firstName = user?.name?.split(' ')[0] || '';
 
   return (
     <div className="flex-1 flex flex-col bg-[#fbfbfb] min-h-0 text-slate-800">
-      {/* Top Header Title Bar: Home matching Screenshot 1 */}
-      <div className="px-8 sm:px-12 pt-7 pb-3">
-        <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Home</h1>
+      {/* Top Header Title Bar: Home with User Greeting */}
+      <div className="px-4 sm:px-8 lg:px-12 pt-5 sm:pt-7 pb-3 flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">
+            {firstName ? `Welcome back, ${firstName}! 👋` : 'Home'}
+          </h1>
+          {user && (
+            <p className="text-xs sm:text-sm text-slate-500 mt-0.5 font-medium">
+              {user.workspace || 'Workspace'} • <span className="text-slate-400">{user.email}</span>
+            </p>
+          )}
+        </div>
       </div>
 
-      <div className="w-full max-w-[1400px] px-8 sm:px-12 py-3 space-y-8 pb-16">
+      <div className="w-full max-w-[1400px] px-4 sm:px-8 lg:px-12 py-3 space-y-6 sm:space-y-8 pb-16">
         
         {/* Promo Announcement Banner: TikTok × Manychat matching Screenshot 1 */}
         {!bannerDismissed && (
-          <div className="relative bg-[#161616] text-white rounded-2xl px-6 py-4 sm:py-5 flex items-center justify-between gap-5 shadow-xs transition-all animate-fade-in">
-            <div className="flex items-center gap-4 min-w-0">
+          <div className="relative bg-[#161616] text-white rounded-2xl p-4 sm:py-5 sm:px-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-5 shadow-xs transition-all animate-fade-in">
+            <div className="flex items-center gap-3.5 sm:gap-4 min-w-0">
               {/* TikTok Badge */}
-              <div className="w-12 h-12 rounded-xl bg-black border border-neutral-800 flex items-center justify-center shrink-0 shadow-inner">
-                <TikTokIcon className="w-6 h-6 text-white" />
+              <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-xl bg-black border border-neutral-800 flex items-center justify-center shrink-0 shadow-inner">
+                <TikTokIcon className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
               </div>
               <div className="min-w-0">
-                <h3 className="font-bold text-base sm:text-[17px] text-white tracking-tight flex items-center gap-2">
+                <h3 className="font-bold text-sm sm:text-base md:text-[17px] text-white tracking-tight flex items-center gap-2">
                   TikTok × OmniConnect. Now we&apos;re talking
                 </h3>
-                <p className="text-neutral-400 text-sm mt-1 truncate">
+                <p className="text-neutral-400 text-xs sm:text-sm mt-0.5 truncate">
                   Discover new opportunities for your audience in TikTok
                 </p>
               </div>
             </div>
 
-            <div className="flex items-center gap-3.5 shrink-0">
+            <div className="flex items-center gap-3 shrink-0 self-end sm:self-auto">
               <button
                 onClick={() => {
                   toast.success('Redirecting to TikTok Integration');
                   navigate('/settings?tab=tiktok');
                 }}
-                className="px-5 py-2 bg-[#2dd4bf] hover:bg-[#14b8a6] text-slate-950 rounded-full font-semibold text-sm transition-colors flex items-center gap-2 shadow-xs cursor-pointer"
+                className="px-4 sm:px-5 py-2 bg-[#2dd4bf] hover:bg-[#14b8a6] text-slate-950 rounded-full font-semibold text-xs sm:text-sm transition-colors flex items-center gap-2 shadow-xs cursor-pointer"
               >
                 <span>Discover</span>
                 <ArrowRight size={15} strokeWidth={2.5} />
@@ -73,8 +85,8 @@ export default function HomePage() {
 
         {/* Greeting Section matching Screenshot 1 */}
         <div className="pt-2">
-          <h2 className="text-4xl sm:text-[46px] font-black text-slate-900 tracking-tight leading-none">
-            Hello, !
+          <h2 className="text-3xl sm:text-4xl md:text-[46px] font-black text-slate-900 tracking-tight leading-none">
+            Hello, {firstName}!
           </h2>
           <div className="flex items-center gap-2.5 mt-2.5 text-sm">
             <span className="text-slate-600 font-normal">1 connected channel</span>
@@ -99,11 +111,11 @@ export default function HomePage() {
             </button>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-5">
             {/* Card 1: Lead magnet */}
             <div
               onClick={() => navigate('/automation')}
-              className="bg-white border border-slate-200/90 hover:border-slate-300 rounded-2xl p-5 flex flex-col justify-between h-[118px] transition-all cursor-pointer shadow-2xs hover:shadow-xs group"
+              className="bg-white border border-slate-200/90 hover:border-slate-300 rounded-2xl p-5 flex flex-col justify-between min-h-[118px] gap-3 transition-all cursor-pointer shadow-2xs hover:shadow-xs group"
             >
               <div className="font-semibold text-slate-800 text-[14.5px] leading-snug group-hover:text-blue-600 transition-colors">
                 Capture customer data with a lead magnet
@@ -123,7 +135,7 @@ export default function HomePage() {
             {/* Card 2: Quiz leads */}
             <div
               onClick={onUpgradeClick}
-              className="bg-white border border-slate-200/90 hover:border-slate-300 rounded-2xl p-5 flex flex-col justify-between h-[118px] transition-all cursor-pointer shadow-2xs hover:shadow-xs group"
+              className="bg-white border border-slate-200/90 hover:border-slate-300 rounded-2xl p-5 flex flex-col justify-between min-h-[118px] gap-3 transition-all cursor-pointer shadow-2xs hover:shadow-xs group"
             >
               <div className="font-semibold text-slate-800 text-[14.5px] leading-snug group-hover:text-blue-600 transition-colors">
                 Use a quiz to qualify leads
@@ -147,7 +159,7 @@ export default function HomePage() {
             {/* Card 3: Ambassador program */}
             <div
               onClick={onUpgradeClick}
-              className="bg-white border border-slate-200/90 hover:border-slate-300 rounded-2xl p-5 flex flex-col justify-between h-[118px] transition-all cursor-pointer shadow-2xs hover:shadow-xs group"
+              className="bg-white border border-slate-200/90 hover:border-slate-300 rounded-2xl p-5 flex flex-col justify-between min-h-[118px] gap-3 transition-all cursor-pointer shadow-2xs hover:shadow-xs group"
             >
               <div className="font-semibold text-slate-800 text-[14.5px] leading-snug group-hover:text-blue-600 transition-colors">
                 Create ambassador program
@@ -417,9 +429,9 @@ export default function HomePage() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-5">
             {/* Card 1: Engagement winners */}
-            <div className="bg-white border border-slate-200/90 rounded-2xl p-5 shadow-2xs flex items-center justify-between min-h-[112px]">
+            <div className="bg-white border border-slate-200/90 rounded-2xl p-5 shadow-2xs flex flex-col sm:flex-row items-start sm:items-center justify-between min-h-[112px] gap-3">
               <div className="space-y-1.5">
                 <div className="font-bold text-slate-900 text-sm">Engagement winners</div>
                 <p className="text-slate-400 text-xs sm:text-[12.5px] leading-relaxed max-w-[190px]">
@@ -454,7 +466,7 @@ export default function HomePage() {
             </div>
 
             {/* Card 2: Time saved */}
-            <div className="bg-white border border-slate-200/90 rounded-2xl p-5 shadow-2xs flex items-center justify-between min-h-[112px]">
+            <div className="bg-white border border-slate-200/90 rounded-2xl p-5 shadow-2xs flex flex-col sm:flex-row items-start sm:items-center justify-between min-h-[112px] gap-3">
               <div className="space-y-1.5">
                 <div className="font-bold text-slate-900 text-sm">Time saved</div>
                 <p className="text-slate-400 text-xs sm:text-[12.5px] leading-relaxed max-w-[200px]">
@@ -491,7 +503,7 @@ export default function HomePage() {
             </div>
 
             {/* Card 3: Leads collected */}
-            <div className="bg-white border border-slate-200/90 rounded-2xl p-5 shadow-2xs flex items-center justify-between min-h-[112px]">
+            <div className="bg-white border border-slate-200/90 rounded-2xl p-5 shadow-2xs flex flex-col sm:flex-row items-start sm:items-center justify-between min-h-[112px] gap-3">
               <div className="space-y-1.5">
                 <div className="font-bold text-slate-900 text-sm">Leads collected</div>
                 <p className="text-slate-400 text-xs sm:text-[12.5px] leading-relaxed max-w-[200px]">
@@ -506,7 +518,7 @@ export default function HomePage() {
               </div>
 
               {/* PHONE and EMAIL Badges matching Screenshot 2 */}
-              <div className="flex flex-col gap-2 items-end shrink-0 pl-2">
+              <div className="flex flex-row sm:flex-col gap-2 items-start sm:items-end shrink-0 pl-0 sm:pl-2">
                 <div className="flex items-center gap-1.5 px-3 py-1 rounded-full border border-slate-200 bg-slate-50 text-slate-700 shadow-2xs text-[11px] font-bold tracking-wider">
                   <Phone size={12} className="text-slate-500" strokeWidth={2.2} />
                   <span>PHONE</span>
