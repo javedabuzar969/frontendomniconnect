@@ -207,6 +207,31 @@ export default function Sidebar({ onUpgradeClick, isMobile = false, onCloseMobil
           );
         })}
 
+        {/* Connect Channels Quick Button */}
+        {(!collapsed || isMobile) ? (
+          <div className="pt-2 px-1">
+            <button
+              onClick={() => {
+                if (isMobile) onCloseMobile?.();
+                navigate('/connect-facebook');
+              }}
+              className="w-full flex items-center justify-center gap-1.5 py-2 px-3 bg-[#0066ff] hover:bg-[#0052cc] text-white rounded-lg text-xs font-semibold shadow-xs transition-colors cursor-pointer"
+            >
+              <span>Connect Channels</span>
+            </button>
+          </div>
+        ) : (
+          <div className="pt-2 flex justify-center">
+            <button
+              onClick={() => navigate('/connect-facebook')}
+              className="w-8 h-8 rounded-lg bg-[#0066ff] text-white flex items-center justify-center text-xs font-bold hover:bg-[#0052cc] cursor-pointer"
+              title="Connect Channels"
+            >
+              +
+            </button>
+          </div>
+        )}
+
         {/* Shortcut hint matching screenshot */}
         {(!collapsed || isMobile) && (
           <div className="pt-3 px-3.5 text-slate-400 text-xs font-semibold select-none">

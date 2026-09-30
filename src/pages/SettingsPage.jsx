@@ -35,6 +35,8 @@ import {
   AppsIllustration,
   TemplatesRabbitIllustration,
 } from '../components/ui/ChannelIllustrations';
+import ConnectInstagramModal from '../components/integrations/ConnectInstagramModal';
+import ConnectFacebookPageModal from '../components/integrations/ConnectFacebookPageModal';
 import toast from 'react-hot-toast';
 
 function Switch({ checked, onChange, label }) {
@@ -158,16 +160,22 @@ export default function SettingsPage() {
   const [groupModalOpen, setGroupModalOpen] = useState(false);
   const [groupName, setGroupName] = useState('');
   const [connectModal, setConnectModal] = useState({ open: false, channelId: null, accountInput: '' });
+  const [showInstagramModal, setShowInstagramModal] = useState(false);
+  const [showFacebookModal, setShowFacebookModal] = useState(false);
 
   // Channel Connection States (for all 7 channels)
-  const [channelStatus, setChannelStatus] = useState({
-    instagram: { connected: false, account: '@omniconnect_official', name: 'Instagram' },
-    tiktok: { connected: false, account: '@omniconnect_tiktok', name: 'TikTok' },
-    whatsapp: { connected: false, account: '+1 555 123 4567', name: 'WhatsApp for your business' },
-    messenger: { connected: false, account: 'OmniConnect Global Page', name: 'Facebook Messenger chatbot #1' },
-    sms: { connected: false, account: '+1 800 555 0199', name: 'SMS Channel' },
-    email: { connected: false, account: 'support@omniconnect.com', name: 'Email Channel' },
-    telegram: { connected: false, account: '@OmniConnectBot', name: 'Telegram Channel' },
+  const [channelStatus, setChannelStatus] = useState(() => {
+    const isIgConnected = localStorage.getItem('omni_instagram_connected') === 'true';
+    const igAcc = localStorage.getItem('omni_instagram_account') || '@omniconnect_official';
+    return {
+      instagram: { connected: isIgConnected, account: igAcc, name: 'Instagram' },
+      tiktok: { connected: false, account: '@omniconnect_tiktok', name: 'TikTok' },
+      whatsapp: { connected: false, account: '+1 555 123 4567', name: 'WhatsApp for your business' },
+      messenger: { connected: false, account: 'OmniConnect Global Page', name: 'Facebook Messenger chatbot #1' },
+      sms: { connected: false, account: '+1 800 555 0199', name: 'SMS Channel' },
+      email: { connected: false, account: 'support@omniconnect.com', name: 'Email Channel' },
+      telegram: { connected: false, account: '@OmniConnectBot', name: 'Telegram Channel' },
+    };
   });
 
   useEffect(() => {
@@ -181,15 +189,20 @@ export default function SettingsPage() {
   };
 
   const handleOpenConnectModal = (channelId) => {
+    if (channelId === 'instagram') {
+      setShowInstagramModal(true);
+      return;
+    }
+    if (channelId === 'messenger') {
+      setShowFacebookModal(true);
+      return;
+    }
+
     const defaultPlaceholder =
-      channelId === 'instagram'
-        ? '@brand_official'
-        : channelId === 'tiktok'
+      channelId === 'tiktok'
         ? '@brand_tiktok'
         : channelId === 'whatsapp'
         ? '+1 555 019 2834'
-        : channelId === 'messenger'
-        ? 'Brand Official Facebook Page'
         : channelId === 'sms'
         ? '+1 800 555 0199'
         : channelId === 'email'
@@ -340,25 +353,76 @@ export default function SettingsPage() {
 
   return (
     <div className="flex flex-col lg:flex-row h-full bg-[#fbfbfb] overflow-hidden text-slate-800 font-sans">
-      {/* Mobile Tab Strip (< lg) */}
-      <div className="lg:hidden flex items-center gap-1.5 px-3 py-2.5 border-b border-[#eef0f3] overflow-x-auto no-scrollbar bg-white shrink-0">
-        {[
-          ...mainNavItems,
-          { id: 'subscriptions', label: 'Subscriptions' },
-          ...channelsList,
-        ].map((item) => (
-          <button
-            key={item.id}
-            onClick={() => handleTabChange(item.id)}
-            className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-colors cursor-pointer shrink-0 ${
-              activeTab === item.id
-                ? 'bg-emerald-100 text-[#00a86b] font-bold'
-                : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50'
-            }`}
+      {/* Mobile Tab Navigation (< lg) */}
+      <div className="lg:hidden bg-white border-b border-[#eef0f3] px-3 py-2 shrink-0 space-y-2">
+        {/* Quick Section Dropdown for Mobile */}
+        <div className="flex items-center gap-2">
+          <label htmlFor="settings-tab-select" className="text-xs font-semibold text-slate-500 shrink-0">
+            Section:
+          </label>
+          <select
+            id="settings-tab-select"
+            value={activeTab}
+            onChange={(e) => handleTabChange(e.target.value)}
+            className="flex-1 bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-slate-800 focus:outline-none focus:border-emerald-500"
           >
-            {item.label}
-          </button>
-        ))}
+            <optgroup label="Main">
+              {mainNavItems.map((item) => (
+                <option key={item.id} value={item.id}>{item.label}</option>
+              ))}
+            </optgroup>
+            <optgroup label="Billing">
+              <option value="subscriptions">Subscriptions</option>
+            </optgroup>
+            <optgroup label="Inbox">
+              <option value="inbox-behavior">Inbox Behavior</option>
+              <option value="auto-assignment">Auto-Assignment</option>
+            </optgroup>
+            <optgroup label="Channels">
+              {channelsList.map((item) => (
+                <option key={item.id} value={item.id}>{item.label}</option>
+              ))}
+            </optgroup>
+            <optgroup label="Automation">
+              <option value="fields">Fields</option>
+              <option value="tags">Tags</option>
+            </optgroup>
+            <optgroup label="Extensions">
+              <option value="api">API</option>
+              <option value="apps">Apps</option>
+              <option value="integrations">Integrations</option>
+              <option value="payments">Payments</option>
+              <option value="installed-templates">Installed Templates</option>
+            </optgroup>
+          </select>
+        </div>
+
+        {/* Quick Horizontal Scroll Pills */}
+        <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-0.5" style={{ WebkitOverflowScrolling: 'touch' }}>
+          {[
+            ...mainNavItems,
+            { id: 'subscriptions', label: 'Subscriptions' },
+            { id: 'inbox-behavior', label: 'Inbox' },
+            { id: 'auto-assignment', label: 'Auto-Assign' },
+            ...channelsList,
+            { id: 'fields', label: 'Fields' },
+            { id: 'tags', label: 'Tags' },
+            { id: 'integrations', label: 'Integrations' },
+            { id: 'payments', label: 'Payments' },
+          ].map((item) => (
+            <button
+              key={item.id}
+              onClick={() => handleTabChange(item.id)}
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-colors cursor-pointer shrink-0 ${
+                activeTab === item.id
+                  ? 'bg-emerald-100 text-[#00a86b] font-bold'
+                  : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50'
+              }`}
+            >
+              {item.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Sub-Sidebar matching Manychat exact layout */}
@@ -2728,6 +2792,35 @@ export default function SettingsPage() {
           </div>
         </div>
       )}
+
+      {/* Instagram Connection Modal (Screenshots 1 & 2) */}
+      <ConnectInstagramModal
+        isOpen={showInstagramModal}
+        onClose={() => setShowInstagramModal(false)}
+        onSuccess={() => {
+          const igAccount = localStorage.getItem('omni_instagram_account') || '@omniconnect_official';
+          setChannelStatus((prev) => ({
+            ...prev,
+            instagram: { ...prev.instagram, connected: true, account: igAccount },
+          }));
+          setShowInstagramModal(false);
+          toast.success('🎉 Instagram connected successfully!');
+        }}
+      />
+
+      {/* Facebook Page Connection Modal */}
+      <ConnectFacebookPageModal
+        isOpen={showFacebookModal}
+        onClose={() => setShowFacebookModal(false)}
+        onPageConnected={(page) => {
+          setChannelStatus((prev) => ({
+            ...prev,
+            messenger: { ...prev.messenger, connected: true, account: page.name },
+          }));
+          setShowFacebookModal(false);
+          toast.success(`🎉 ${page.name} connected to Facebook Messenger!`);
+        }}
+      />
     </div>
   );
 }

@@ -9,6 +9,9 @@ import InboxPage from './pages/InboxPage';
 import BroadcastsPage from './pages/BroadcastsPage';
 import SettingsPage from './pages/SettingsPage';
 import OnboardingPage from './pages/OnboardingPage';
+import ConnectFacebookPage from './pages/ConnectFacebookPage';
+import ConnectInstagramPage from './pages/ConnectInstagramPage';
+import MetaCallbackPage from './pages/MetaCallbackPage';
 
 // ── Protected Route wrapper ────────────────────────────────
 // If user is not logged in → redirect to /login
@@ -62,6 +65,9 @@ export default function App() {
         }
       />
 
+      {/* Meta OAuth Popup Callback */}
+      <Route path="/meta-callback" element={<MetaCallbackPage />} />
+
       {/* Onboarding Flow: shown after first time login/signup */}
       <Route
         path="/onboarding"
@@ -85,6 +91,8 @@ export default function App() {
         <Route path="/inbox" element={<InboxPage />} />
         <Route path="/broadcasts" element={<BroadcastsPage />} />
         <Route path="/settings" element={<SettingsPage />} />
+        <Route path="/connect-facebook" element={<ConnectFacebookPage />} />
+        <Route path="/connect-instagram" element={<ConnectInstagramPage />} />
 
         {/* Redirects */}
         <Route path="/automation" element={<Navigate to="/home" replace />} />

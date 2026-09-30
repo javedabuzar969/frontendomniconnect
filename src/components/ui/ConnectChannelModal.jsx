@@ -40,7 +40,7 @@ export default function ConnectChannelModal({ isOpen, onClose, onConnect }) {
       name: 'Facebook',
       icon: <FacebookChannelIcon className="w-7 h-7" />,
       description: 'Build relationships with customers through interactive and tailored content.',
-      buttonText: 'Reconnect',
+      buttonText: 'Connect Pages',
       badge: null,
     },
     {

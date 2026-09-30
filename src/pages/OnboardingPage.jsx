@@ -119,29 +119,29 @@ export default function OnboardingPage() {
     <div className="min-h-screen bg-white text-slate-900 flex flex-col font-sans select-none">
       <div className="flex-1 flex flex-col lg:flex-row max-w-7xl w-full mx-auto">
         {/* ── Left Column: Logo + Unicorn + Headline ────────────── */}
-        <div className="w-full lg:w-1/2 p-8 sm:p-14 lg:p-20 flex flex-col justify-between bg-white">
+        <div className="w-full lg:w-1/2 p-5 sm:p-10 lg:p-16 flex flex-col justify-between bg-white">
           <div>
             {/* OmniConnect Brand Logo */}
-            <h1 className="text-2xl font-black text-black tracking-tight">OmniConnect</h1>
+            <h1 className="text-xl sm:text-2xl font-black text-black tracking-tight">OmniConnect</h1>
 
             {/* Illustration */}
-            <div className="mt-12 sm:mt-16">
-              <UnicornIllustration />
+            <div className="mt-4 sm:mt-10 lg:mt-14 flex justify-center lg:justify-start">
+              <UnicornIllustration className="w-28 h-28 sm:w-36 sm:h-36 lg:w-48 lg:h-48" />
             </div>
 
             {/* Headline */}
-            <h2 className="text-3xl sm:text-4xl font-extrabold text-black tracking-tight mt-8 sm:mt-10 leading-tight">
-              Let's find the right<br />strategy for you
+            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-black tracking-tight mt-4 sm:mt-8 leading-tight">
+              Let's find the right<br className="hidden sm:inline" /> strategy for you
             </h2>
 
             {/* Subtitle */}
-            <p className="text-slate-500 text-xs sm:text-sm mt-3.5 max-w-sm leading-relaxed">
+            <p className="text-slate-500 text-xs sm:text-sm mt-2 sm:mt-3.5 max-w-sm leading-relaxed">
               Tell us a little about your business, so we can match the right marketing approach.
             </p>
           </div>
 
           {/* Bottom Back Button (only on steps 2 & 3) */}
-          <div className="mt-8 pt-4">
+          <div className="mt-4 sm:mt-8 pt-2 sm:pt-4">
             {step > 1 ? (
               <button
                 type="button"
@@ -157,8 +157,8 @@ export default function OnboardingPage() {
         </div>
 
         {/* ── Right Column: Question & Options ─────────────────── */}
-        <div className="w-full lg:w-1/2 p-8 sm:p-14 lg:p-20 flex flex-col justify-between bg-white border-t lg:border-t-0 lg:border-l border-slate-100">
-          <div className="max-w-md w-full mx-auto lg:mx-0 pt-4 sm:pt-10">
+        <div className="w-full lg:w-1/2 p-5 sm:p-10 lg:p-16 flex flex-col justify-between bg-white border-t lg:border-t-0 lg:border-l border-slate-100">
+          <div className="max-w-md w-full mx-auto lg:mx-0 pt-2 sm:pt-6 lg:pt-10">
             {/* ── STEP 1: Who are you setting up this account for? ── */}
             {step === 1 && (
               <div className="space-y-4 animate-fade-in">

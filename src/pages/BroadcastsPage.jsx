@@ -49,21 +49,22 @@ export default function BroadcastsPage() {
           </button>
         </div>
 
-        <div className="flex items-center gap-3 self-start sm:self-auto">
+        <div className="flex items-center gap-2 sm:gap-3 flex-wrap self-start sm:self-auto w-full sm:w-auto">
           <button
             onClick={() => {
               setSelectedChannel('whatsapp');
               setComposerOpen(true);
             }}
-            className="px-5 py-2.5 border border-blue-600 text-blue-600 hover:bg-blue-50/70 rounded-xl font-semibold text-sm transition-colors shadow-2xs cursor-pointer"
+            className="flex-1 sm:flex-initial px-3 sm:px-5 py-2 sm:py-2.5 border border-blue-600 text-blue-600 hover:bg-blue-50/70 rounded-xl font-semibold text-xs sm:text-sm transition-colors shadow-2xs cursor-pointer text-center whitespace-nowrap"
           >
-            Broadcast From Automation
+            <span className="hidden sm:inline">Broadcast From Automation</span>
+            <span className="sm:hidden">From Automation</span>
           </button>
           <button
             onClick={() => setComposerOpen(true)}
-            className="px-5 py-2.5 bg-[#007aff] hover:bg-[#0069db] text-white rounded-xl font-semibold text-sm transition-colors shadow-xs cursor-pointer flex items-center gap-2"
+            className="flex-1 sm:flex-initial px-3 sm:px-5 py-2 sm:py-2.5 bg-[#007aff] hover:bg-[#0069db] text-white rounded-xl font-semibold text-xs sm:text-sm transition-colors shadow-xs cursor-pointer flex items-center justify-center gap-1.5 sm:gap-2 whitespace-nowrap"
           >
-            <Plus size={16} strokeWidth={2.5} />
+            <Plus size={15} strokeWidth={2.5} />
             <span>New Broadcast</span>
           </button>
         </div>
@@ -141,8 +142,8 @@ export default function BroadcastsPage() {
       {composerOpen && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-fade-in">
           <div className="bg-white rounded-2xl max-w-xl w-full shadow-2xl overflow-hidden border border-slate-200 flex flex-col">
-            <div className="px-7 py-5 border-b border-slate-200 flex items-center justify-between">
-              <h3 className="font-bold text-slate-900 text-xl">New Broadcast</h3>
+            <div className="px-4 sm:px-7 py-3.5 sm:py-5 border-b border-slate-200 flex items-center justify-between">
+              <h3 className="font-bold text-slate-900 text-lg sm:text-xl">New Broadcast</h3>
               <button
                 onClick={() => setComposerOpen(false)}
                 className="text-slate-400 hover:text-slate-700 p-1.5 rounded-lg hover:bg-slate-100 cursor-pointer"
@@ -151,7 +152,7 @@ export default function BroadcastsPage() {
               </button>
             </div>
 
-            <form onSubmit={handleSendBroadcast} className="p-7 space-y-5 overflow-y-auto max-h-[80vh]">
+            <form onSubmit={handleSendBroadcast} className="p-4 sm:p-7 space-y-4 sm:space-y-5 overflow-y-auto max-h-[80vh]">
               {/* Broadcast Name */}
               <div>
                 <label className="block font-semibold text-slate-700 text-sm mb-1.5">Broadcast Name</label>

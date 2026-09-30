@@ -19,59 +19,49 @@ import {
   InstagramIcon,
   MessengerBrandIcon,
 } from '../components/ui/Icons';
+import { apiClient } from '../api/client';
 import toast from 'react-hot-toast';
 
-const MOCK_CONTACTS = [
-  {
-    id: 'c1',
-    name: 'Alice Johnson',
-    gender: 'Female',
-    channel: 'whatsapp',
-    identifier: '+1 202 555 0192',
-    subscribed: 'Sep 02, 2026',
-    status: 'Subscribed',
-    tags: ['VIP', 'Customer'],
-  },
-  {
-    id: 'c2',
-    name: 'Bob Martinez',
-    gender: 'Male',
-    channel: 'instagram',
-    identifier: '@bob_martinez99',
-    subscribed: 'Sep 01, 2026',
-    status: 'Subscribed',
-    tags: ['Lead', 'Webinar'],
-  },
-  {
-    id: 'c3',
-    name: 'Priya Sharma',
-    gender: 'Female',
-    channel: 'whatsapp',
-    identifier: '+91 98765 43210',
-    subscribed: 'Aug 28, 2026',
-    status: 'Subscribed',
-    tags: ['Wholesale'],
-  },
-  {
-    id: 'c4',
-    name: 'David Wilson',
-    gender: 'Male',
-    channel: 'messenger',
-    identifier: 'david.wilson.fb',
-    subscribed: 'Aug 25, 2026',
-    status: 'Subscribed',
-    tags: ['Promo20'],
-  },
-];
-
 export default function ContactsPage() {
-  const [contacts, setContacts] = useState(MOCK_CONTACTS);
+  const [contacts, setContacts] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState('');
   const [channelFilter, setChannelFilter] = useState('all');
   const [newContactModal, setNewContactModal] = useState(false);
   const [newContactName, setNewContactName] = useState('');
   const [newContactPhone, setNewContactPhone] = useState('');
   const [newContactChannel, setNewContactChannel] = useState('whatsapp');
+
+  useEffect(() => {
+    loadContacts();
+  }, []);
+
+  const loadContacts = async () => {
+    setLoading(true);
+    try {
+      const res = await apiClient.get('/api/conversations');
+      if (res.data?.success && Array.isArray(res.data.data)) {
+        const mapped = res.data.data.map((c) => ({
+          id: c.id,
+          name: c.name,
+          gender: 'Other',
+          channel: c.channel,
+          identifier: c.phoneNumber,
+          subscribed: c.time || 'Recent',
+          status: 'Subscribed',
+          tags: [c.channel === 'facebook' ? 'Facebook Lead' : 'WhatsApp Lead'],
+        }));
+        setContacts(mapped);
+      } else {
+        setContacts([]);
+      }
+    } catch (err) {
+      console.warn('Contacts load:', err.message);
+      setContacts([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const filtered = contacts.filter((c) => {
     if (channelFilter !== 'all' && c.channel !== channelFilter) return false;
@@ -105,30 +95,30 @@ export default function ContactsPage() {
   return (
     <div className="flex-1 flex flex-col bg-[#fbfbfb] min-h-0 text-slate-800 overflow-y-auto">
       {/* Top Header Title Bar matching Home Page scale */}
-      <div className="px-4 sm:px-8 lg:px-12 pt-5 sm:pt-7 pb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="px-4 sm:px-8 lg:px-12 pt-4 sm:pt-7 pb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Contacts</h1>
-          <p className="text-slate-500 text-sm mt-1">Manage subscribers, customer tags, and channel status</p>
+          <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">Contacts</h1>
+          <p className="text-slate-500 text-xs sm:text-sm mt-0.5">Manage subscribers, customer tags, and channel status</p>
         </div>
 
-        <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
+        <div className="flex items-center gap-2 sm:gap-3 flex-wrap w-full sm:w-auto">
           <button
             onClick={() => toast.success('Exporting contacts to CSV')}
-            className="px-3 sm:px-4 py-2 sm:py-2.5 bg-white border border-slate-200/90 hover:bg-slate-50 text-slate-700 rounded-xl flex items-center gap-1.5 sm:gap-2 font-semibold text-xs sm:text-sm shadow-2xs hover:shadow-xs transition-all cursor-pointer"
+            className="flex-1 sm:flex-initial px-3 sm:px-4 py-2 sm:py-2.5 bg-white border border-slate-200/90 hover:bg-slate-50 text-slate-700 rounded-xl flex items-center justify-center gap-1.5 sm:gap-2 font-semibold text-xs sm:text-sm shadow-2xs hover:shadow-xs transition-all cursor-pointer whitespace-nowrap"
           >
-            <Download size={15} />
+            <Download size={14} />
             <span>Export</span>
           </button>
           <button
             onClick={() => toast('Import contacts wizard opened')}
-            className="px-3 sm:px-4 py-2 sm:py-2.5 bg-white border border-slate-200/90 hover:bg-slate-50 text-slate-700 rounded-xl flex items-center gap-1.5 sm:gap-2 font-semibold text-xs sm:text-sm shadow-2xs hover:shadow-xs transition-all cursor-pointer"
+            className="flex-1 sm:flex-initial px-3 sm:px-4 py-2 sm:py-2.5 bg-white border border-slate-200/90 hover:bg-slate-50 text-slate-700 rounded-xl flex items-center justify-center gap-1.5 sm:gap-2 font-semibold text-xs sm:text-sm shadow-2xs hover:shadow-xs transition-all cursor-pointer whitespace-nowrap"
           >
-            <Upload size={15} />
+            <Upload size={14} />
             <span>Import</span>
           </button>
           <button
             onClick={() => setNewContactModal(true)}
-            className="px-4 sm:px-5 py-2 sm:py-2.5 bg-[#007aff] hover:bg-[#0069db] text-white rounded-xl flex items-center gap-1.5 sm:gap-2 font-semibold text-xs sm:text-sm shadow-xs transition-colors cursor-pointer"
+            className="w-full xs:w-auto sm:flex-initial px-3.5 sm:px-5 py-2 sm:py-2.5 bg-[#007aff] hover:bg-[#0069db] text-white rounded-xl flex items-center justify-center gap-1.5 sm:gap-2 font-semibold text-xs sm:text-sm shadow-xs transition-colors cursor-pointer whitespace-nowrap"
           >
             <Plus size={15} strokeWidth={2.5} />
             <span>New Contact</span>
@@ -168,7 +158,7 @@ export default function ContactsPage() {
 
         {/* Contacts Table Card with Horizontal Scroll Container */}
         <div className="bg-white border border-slate-200/90 rounded-2xl overflow-hidden shadow-2xs">
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto" style={{ WebkitOverflowScrolling: 'touch' }}>
             <table className="w-full text-left border-collapse min-w-[700px]">
               <thead>
                 <tr className="bg-slate-50/80 border-b border-slate-200/90 text-slate-500 font-semibold text-xs uppercase tracking-wider">

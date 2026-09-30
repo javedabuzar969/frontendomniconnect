@@ -45,16 +45,16 @@ const RECENT_ACTIVITY = [
 
 export default function DashboardPage() {
   return (
-    <div className="p-8 space-y-8 animate-fade-in bg-slate-50 min-h-screen">
+    <div className="p-4 sm:p-6 lg:p-8 space-y-6 sm:space-y-8 animate-fade-in bg-slate-50 min-h-screen">
       {/* Header */}
-      <div className="flex items-center justify-between pb-4 border-b border-slate-200">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-200">
         <div>
-          <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">Dashboard</h1>
-          <p className="text-slate-500 text-sm mt-0.5">
+          <h1 className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight">Dashboard</h1>
+          <p className="text-slate-500 text-xs sm:text-sm mt-0.5">
             Welcome back! Here's your WhatsApp overview.
           </p>
         </div>
-        <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-emerald-50 border border-emerald-200">
+        <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-emerald-50 border border-emerald-200 self-start sm:self-auto">
           <span className="w-2 h-2 rounded-full bg-brand-500 shadow-[0_0_6px_rgba(37,211,102,0.6)]" />
           <span className="text-xs font-semibold text-brand-700">WhatsApp Active</span>
         </div>
