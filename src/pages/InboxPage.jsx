@@ -23,6 +23,7 @@ import {
   ChevronLeft,
   CheckSquare,
   ListChecks,
+  RefreshCw,
 } from 'lucide-react';
 import {
   InboxIllustration,
@@ -97,6 +98,25 @@ export default function InboxPage() {
       }
     } catch (err) {
       console.warn('Backend conversations load:', err.message);
+    }
+  };
+
+  const [isSyncing, setIsSyncing] = useState(false);
+
+  const handleSyncMetaChats = async () => {
+    setIsSyncing(true);
+    try {
+      const res = await apiClient.post('/api/integrations/facebook/sync');
+      if (res.data?.success) {
+        toast.success(res.data.message || 'Chats synced successfully!');
+        await loadConversations();
+      } else {
+        toast.error('Sync failed: ' + (res.data?.error || 'Unknown error'));
+      }
+    } catch (err) {
+      toast.error('Sync error: ' + (err.response?.data?.error || err.message));
+    } finally {
+      setIsSyncing(false);
     }
   };
 
@@ -229,6 +249,15 @@ export default function InboxPage() {
 
         {/* Right: Connect Channels button & Settings gear */}
         <div className="flex items-center gap-2 shrink-0">
+          <button
+            onClick={handleSyncMetaChats}
+            disabled={isSyncing}
+            className="px-2.5 py-1.5 sm:py-2 border border-slate-200 text-slate-700 hover:bg-slate-50 rounded-lg text-xs font-medium transition-colors cursor-pointer flex items-center gap-1.5 shrink-0"
+            title="Sync chats from Meta Business Suite / Messenger"
+          >
+            <RefreshCw size={13} className={isSyncing ? 'animate-spin text-blue-600' : 'text-slate-500'} />
+            <span className="hidden sm:inline">{isSyncing ? 'Syncing...' : 'Sync Meta'}</span>
+          </button>
           <button
             onClick={() => setShowConnectModal(true)}
             className="px-3.5 py-1.5 sm:py-2 bg-[#0066ff] hover:bg-[#0052cc] text-white rounded-lg text-xs font-semibold transition-colors cursor-pointer shadow-xs flex items-center gap-1.5 shrink-0"
