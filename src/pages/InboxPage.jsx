@@ -225,18 +225,25 @@ export default function InboxPage() {
   };
 
 
-  const filteredConversations = conversations.filter((c) => {
-    if (activeFolder === 'reminders' && !c.hasReminder) return false;
-    if (activeFolder === 'favorites' && !c.isFavorite) return false;
-    if (statusFilter !== 'all' && c.status !== statusFilter) return false;
-    if (unreadOnly && !c.unread) return false;
-    if (channelFilter !== 'all' && c.channel !== channelFilter) return false;
-    if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase();
-      return c.name.toLowerCase().includes(q) || c.lastMessage.toLowerCase().includes(q);
-    }
-    return true;
-  });
+  const filteredConversations = conversations
+    .filter((c) => {
+      if (activeFolder === 'reminders' && !c.hasReminder) return false;
+      if (activeFolder === 'favorites' && !c.isFavorite) return false;
+      if (statusFilter !== 'all' && c.status !== statusFilter) return false;
+      if (unreadOnly && !c.unread) return false;
+      if (channelFilter !== 'all' && c.channel !== channelFilter) return false;
+      if (searchQuery.trim()) {
+        const q = searchQuery.toLowerCase();
+        return c.name.toLowerCase().includes(q) || c.lastMessage.toLowerCase().includes(q);
+      }
+      return true;
+    })
+    .sort((a, b) => {
+      // Always sort newest message first so chats bubble up naturally
+      const aTime = new Date(a.lastMessageAt || 0).getTime();
+      const bTime = new Date(b.lastMessageAt || 0).getTime();
+      return sortOrder === 'oldest' ? aTime - bTime : bTime - aTime;
+    });
 
   return (
     <div className="flex-1 flex flex-col h-full w-full bg-white text-slate-800 overflow-hidden select-none">
@@ -530,7 +537,7 @@ export default function InboxPage() {
                 <div
                   key={conv.id}
                   onClick={() => setSelectedId(conv.id)}
-                  className={`p-3.5 sm:p-4 cursor-pointer transition-colors flex items-start gap-3.5 ${
+                  className={`p-3.5 sm:p-4 cursor-pointer transition-all duration-300 flex items-start gap-3.5 ${
                     selectedId === conv.id
                       ? 'bg-blue-50/70 border-l-3 border-blue-600'
                       : 'hover:bg-slate-50'
