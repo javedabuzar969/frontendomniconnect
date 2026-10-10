@@ -91,10 +91,15 @@ export default function InboxPage() {
     try {
       const res = await apiClient.get('/api/conversations');
       if (res.data?.success && Array.isArray(res.data.data) && res.data.data.length > 0) {
-        setConversations(res.data.data);
-        if (!selectedId) {
-          setSelectedId(res.data.data[0].id);
-        }
+        const newData = res.data.data;
+        // Smart diff: only update state if something actually changed (no flash/flicker)
+        setConversations((prev) => {
+          const prevHash = prev.map((c) => c.id + '|' + c.lastMessage + '|' + c.unreadCount).join(',');
+          const newHash  = newData.map((c) => c.id + '|' + c.lastMessage + '|' + c.unreadCount).join(',');
+          if (prevHash === newHash) return prev; // nothing changed → no re-render
+          return newData;
+        });
+        setSelectedId((prev) => prev || newData[0].id);
       }
     } catch (err) {
       console.warn('Backend conversations load:', err.message);
@@ -122,16 +127,16 @@ export default function InboxPage() {
 
   useEffect(() => {
     loadConversations();
-    // Background auto-sync from Meta every 6 seconds so new messages arrive automatically
+    // Background auto-sync from Meta every 8 seconds — no page flash because of smart diff above
     const syncAndLoad = async () => {
       try {
         await apiClient.post('/api/integrations/facebook/sync');
       } catch (_) {}
       await loadConversations();
     };
-    const interval = setInterval(syncAndLoad, 6000);
+    const interval = setInterval(syncAndLoad, 8000);
     return () => clearInterval(interval);
-  }, [selectedId]);
+  }, []); // Empty deps: interval runs once, selectedId changes won't reset it
 
   const handleCloseModal = () => {
     setShowConnectModal(false);
