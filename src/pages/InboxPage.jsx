@@ -1,5 +1,5 @@
 // pages/InboxPage.jsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import ConnectChannelModal from '../components/ui/ConnectChannelModal';
 import ConnectFacebookPageModal from '../components/integrations/ConnectFacebookPageModal';
@@ -89,75 +89,91 @@ export default function InboxPage() {
     }
   }, [searchParams]);
 
+  // Keep a ref of conversations for comparison without depending on state
+  const convsRef = useRef([]);
+
   const loadConversations = async () => {
     try {
       const res = await apiClient.get('/api/conversations');
       if (res.data?.success && Array.isArray(res.data.data) && res.data.data.length > 0) {
         const newData = res.data.data;
-        setConversations((prev) => {
-          // Only compare lastMessage text — unreadCount changes too often causing jumps
-          const prevMap = new Map(prev.map((c) => [c.id, c.lastMessage]));
-          const prevHash = prev.map((c) => c.id + '|' + c.lastMessage).join(',');
-          const newHash  = newData.map((c) => c.id + '|' + c.lastMessage).join(',');
-          if (prevHash === newHash) return prev; // nothing changed → no re-render
+        const prev = convsRef.current;
 
-          // Detect which conversations got NEW messages
-          const updatedConvs = newData.filter((c) => {
-            const old = prevMap.get(c.id);
-            return old !== undefined && old !== c.lastMessage;
-          });
+        // Compare outside state setter (pure comparison)
+        const prevHash = prev.map((c) => c.id + '|' + c.lastMessage).join(',');
+        const newHash  = newData.map((c) => c.id + '|' + c.lastMessage).join(',');
 
-          if (updatedConvs.length > 0) {
-            const updatedIds = updatedConvs.map((c) => c.id);
-            setNewMessageIds((s) => new Set([...s, ...updatedIds]));
-            // Auto-clear highlight after 4 seconds
-            setTimeout(() => {
-              setNewMessageIds((s) => {
-                const next = new Set(s);
-                updatedIds.forEach((id) => next.delete(id));
-                return next;
-              });
-            }, 4000);
+        if (prevHash === newHash) return; // nothing changed — skip entirely
 
-            // Show toast popup for each new message
-            updatedConvs.forEach((c) => {
-              toast(
-                (t) => (
-                  <div
-                    style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }}
-                    onClick={() => {
-                      toast.dismiss(t.id);
-                      setSelectedId(c.id);
-                    }}
-                  >
-                    <img
-                      src={c.avatar}
-                      alt={c.name}
-                      style={{ width: 36, height: 36, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }}
-                    />
-                    <div>
-                      <div style={{ fontWeight: 700, fontSize: 13, color: '#1e293b' }}>{c.name}</div>
-                      <div style={{ fontSize: 12, color: '#64748b', marginTop: 2 }}>{c.lastMessage}</div>
-                    </div>
-                  </div>
-                ),
-                {
-                  duration: 5000,
-                  style: { padding: '10px 14px', minWidth: 260, maxWidth: 320, border: '1px solid #e2e8f0', boxShadow: '0 4px 16px rgba(0,0,0,0.10)' },
-                  icon: '💬',
-                }
-              );
-            });
-          }
-
-          return newData;
+        // Detect which conversations got NEW messages (existing contacts with changed lastMessage)
+        const prevMap = new Map(prev.map((c) => [c.id, c.lastMessage]));
+        const updatedConvs = newData.filter((c) => {
+          const old = prevMap.get(c.id);
+          return old !== undefined && old !== c.lastMessage;
         });
-        setSelectedId((prev) => prev || newData[0].id);
+
+        // Update ref & state
+        convsRef.current = newData;
+        setConversations(newData);
+        setSelectedId((p) => p || newData[0].id);
+
+        // Fire side effects OUTSIDE state setter
+        if (updatedConvs.length > 0) {
+          const updatedIds = updatedConvs.map((c) => c.id);
+
+          // Highlight updated chats
+          setNewMessageIds((s) => new Set([...s, ...updatedIds]));
+          setTimeout(() => {
+            setNewMessageIds((s) => {
+              const next = new Set(s);
+              updatedIds.forEach((id) => next.delete(id));
+              return next;
+            });
+          }, 4000);
+
+          // Show toast popup for each new message
+          updatedConvs.forEach((c) => {
+            toast(
+              (t) => (
+                <div
+                  style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }}
+                  onClick={() => {
+                    toast.dismiss(t.id);
+                    setSelectedId(c.id);
+                  }}
+                >
+                  <img
+                    src={c.avatar}
+                    alt={c.name}
+                    style={{ width: 38, height: 38, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }}
+                  />
+                  <div>
+                    <div style={{ fontWeight: 700, fontSize: 13, color: '#1e293b' }}>{c.name}</div>
+                    <div style={{ fontSize: 12, color: '#64748b', marginTop: 2 }}>{c.lastMessage}</div>
+                  </div>
+                </div>
+              ),
+              {
+                duration: 5000,
+                style: {
+                  padding: '10px 14px',
+                  minWidth: 260,
+                  maxWidth: 340,
+                  border: '1px solid #e2e8f0',
+                  boxShadow: '0 4px 20px rgba(0,0,0,0.12)',
+                  borderRadius: '12px',
+                },
+                icon: '💬',
+              }
+            );
+          });
+        }
       }
     } catch (err) {
       console.warn('Backend conversations load:', err.message);
     }
   };
+
 
 
   const [isSyncing, setIsSyncing] = useState(false);
