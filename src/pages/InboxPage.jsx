@@ -95,30 +95,59 @@ export default function InboxPage() {
       if (res.data?.success && Array.isArray(res.data.data) && res.data.data.length > 0) {
         const newData = res.data.data;
         setConversations((prev) => {
-          // Build prev lookup map for quick comparison
+          // Only compare lastMessage text — unreadCount changes too often causing jumps
           const prevMap = new Map(prev.map((c) => [c.id, c.lastMessage]));
-          const newHash = newData.map((c) => c.id + '|' + c.lastMessage + '|' + c.unreadCount).join(',');
-          const prevHash = prev.map((c) => c.id + '|' + c.lastMessage + '|' + c.unreadCount).join(',');
+          const prevHash = prev.map((c) => c.id + '|' + c.lastMessage).join(',');
+          const newHash  = newData.map((c) => c.id + '|' + c.lastMessage).join(',');
           if (prevHash === newHash) return prev; // nothing changed → no re-render
 
           // Detect which conversations got NEW messages
-          const updatedIds = newData
-            .filter((c) => {
-              const old = prevMap.get(c.id);
-              return old !== undefined && old !== c.lastMessage; // existing conv with new msg
-            })
-            .map((c) => c.id);
+          const updatedConvs = newData.filter((c) => {
+            const old = prevMap.get(c.id);
+            return old !== undefined && old !== c.lastMessage;
+          });
 
-          if (updatedIds.length > 0) {
+          if (updatedConvs.length > 0) {
+            const updatedIds = updatedConvs.map((c) => c.id);
             setNewMessageIds((s) => new Set([...s, ...updatedIds]));
-            // Auto-clear highlight after 3 seconds
+            // Auto-clear highlight after 4 seconds
             setTimeout(() => {
               setNewMessageIds((s) => {
                 const next = new Set(s);
                 updatedIds.forEach((id) => next.delete(id));
                 return next;
               });
-            }, 3000);
+            }, 4000);
+
+            // Show toast popup for each new message
+            updatedConvs.forEach((c) => {
+              toast(
+                (t) => (
+                  <div
+                    style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }}
+                    onClick={() => {
+                      toast.dismiss(t.id);
+                      setSelectedId(c.id);
+                    }}
+                  >
+                    <img
+                      src={c.avatar}
+                      alt={c.name}
+                      style={{ width: 36, height: 36, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }}
+                    />
+                    <div>
+                      <div style={{ fontWeight: 700, fontSize: 13, color: '#1e293b' }}>{c.name}</div>
+                      <div style={{ fontSize: 12, color: '#64748b', marginTop: 2 }}>{c.lastMessage}</div>
+                    </div>
+                  </div>
+                ),
+                {
+                  duration: 5000,
+                  style: { padding: '10px 14px', minWidth: 260, maxWidth: 320, border: '1px solid #e2e8f0', boxShadow: '0 4px 16px rgba(0,0,0,0.10)' },
+                  icon: '💬',
+                }
+              );
+            });
           }
 
           return newData;
@@ -129,6 +158,7 @@ export default function InboxPage() {
       console.warn('Backend conversations load:', err.message);
     }
   };
+
 
   const [isSyncing, setIsSyncing] = useState(false);
 
