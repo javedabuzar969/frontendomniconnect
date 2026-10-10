@@ -53,6 +53,8 @@ export default function InboxPage() {
   const [replyText, setReplyText] = useState('');
   // Track which conv IDs just received a new message (for popup highlight)
   const [newMessageIds, setNewMessageIds] = useState(new Set());
+  // Track which conversations have been clicked/seen in this session
+  const [seenIds, setSeenIds] = useState(new Set());
 
   // Dropdown open states
   const [openChatsMenu, setOpenChatsMenu] = useState(false);
@@ -98,6 +100,7 @@ export default function InboxPage() {
 
   const handleSelectConversation = (id) => {
     setSelectedId(id);
+    setSeenIds((prev) => new Set([...prev, id]));
     setNewMessageIds((s) => {
       if (!s.has(id)) return s;
       const next = new Set(s);
@@ -133,9 +136,6 @@ export default function InboxPage() {
         // Update ref & state
         convsRef.current = newData;
         setConversations(newData);
-        if (!selectedIdRef.current && newData.length > 0) {
-          setSelectedId(newData[0].id);
-        }
 
         // Fire side effects OUTSIDE state setter
         if (updatedConvs.length > 0) {
@@ -146,6 +146,12 @@ export default function InboxPage() {
             .map((c) => c.id);
 
           if (unseenUpdated.length > 0) {
+            // Un-see these IDs so they pop out again
+            setSeenIds((prev) => {
+              const next = new Set(prev);
+              unseenUpdated.forEach((id) => next.delete(id));
+              return next;
+            });
             // Persistent pop: Stays in newMessageIds until user clicks/opens it!
             setNewMessageIds((s) => new Set([...s, ...unseenUpdated]));
           }
@@ -168,7 +174,7 @@ export default function InboxPage() {
                   />
                   <div>
                     <div style={{ fontWeight: 700, fontSize: 13, color: '#1e293b' }}>{c.name}</div>
-                    <div style={{ fontSize: 12, color: '#64748b', marginTop: 2 }}>{c.lastMessage}</div>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: '#0f172a', marginTop: 2 }}>{c.lastMessage}</div>
                   </div>
                 </div>
               ),
@@ -319,7 +325,8 @@ export default function InboxPage() {
       if (activeFolder === 'reminders' && !c.hasReminder) return false;
       if (activeFolder === 'favorites' && !c.isFavorite) return false;
       if (statusFilter !== 'all' && c.status !== statusFilter) return false;
-      if (unreadOnly && !c.unread && !newMessageIds.has(c.id)) return false;
+      const isConvUnread = (c.unread || newMessageIds.has(c.id)) && !seenIds.has(c.id);
+      if (unreadOnly && !isConvUnread) return false;
       if (channelFilter !== 'all' && c.channel !== channelFilter) return false;
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase();
@@ -329,10 +336,10 @@ export default function InboxPage() {
     })
     .sort((a, b) => {
       // Unseen popped chats stay pinned at the very top until seen/clicked
-      const aPopped = newMessageIds.has(a.id);
-      const bPopped = newMessageIds.has(b.id);
-      if (aPopped && !bPopped) return -1;
-      if (!aPopped && bPopped) return 1;
+      const aUnread = (a.unread || newMessageIds.has(a.id)) && !seenIds.has(a.id);
+      const bUnread = (b.unread || newMessageIds.has(b.id)) && !seenIds.has(b.id);
+      if (aUnread && !bUnread) return -1;
+      if (!aUnread && bUnread) return 1;
 
       // Secondary sort: by latest message timestamp
       const aTime = new Date(a.lastMessageAt || 0).getTime();
@@ -629,25 +636,23 @@ export default function InboxPage() {
               </div>
             ) : (
               filteredConversations.map((conv) => {
-                const isPopped = newMessageIds.has(conv.id);
+                const isUnseen = Boolean((conv.unread || newMessageIds.has(conv.id)) && !seenIds.has(conv.id));
                 const isSelected = selectedId === conv.id;
 
                 return (
                   <div
                     key={conv.id}
                     onClick={() => handleSelectConversation(conv.id)}
-                    style={isPopped ? {
+                    style={isUnseen ? {
                       animation: 'newMsgPop 0.4s cubic-bezier(0.34,1.56,0.64,1)',
-                      background: 'linear-gradient(90deg, #eff6ff 0%, #ffffff 100%)',
-                      borderLeft: '4px solid #2563eb',
-                      boxShadow: '0 4px 14px rgba(37,99,235,0.14)',
+                      background: isSelected ? 'rgba(239, 246, 255, 0.8)' : '#ffffff',
                     } : {}}
-                    className={`p-3.5 sm:p-4 cursor-pointer transition-all duration-300 flex items-start gap-3.5 ${
+                    className={`p-3.5 sm:p-4 cursor-pointer transition-all duration-200 flex items-start gap-3.5 border-b border-slate-100 ${
                       isSelected
-                        ? 'bg-blue-50/70 border-l-3 border-blue-600'
-                        : isPopped
-                        ? ''
-                        : 'hover:bg-slate-50'
+                        ? 'bg-blue-50/70 border-l-4 border-[#0066ff]'
+                        : isUnseen
+                        ? 'bg-white hover:bg-slate-50 border-l-4 border-[#0066ff]'
+                        : 'bg-white hover:bg-slate-50 border-l-4 border-transparent'
                     }`}
                   >
                     <div className="relative shrink-0">
@@ -656,10 +661,10 @@ export default function InboxPage() {
                         alt={conv.name}
                         className="w-10 h-10 rounded-full object-cover border border-slate-200"
                       />
-                      {isPopped && (
-                        <span className="absolute -top-1 -right-1 flex h-3.5 w-3.5">
+                      {isUnseen && (
+                        <span className="absolute -top-0.5 -right-0.5 flex h-3 w-3">
                           <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75" />
-                          <span className="relative inline-flex rounded-full h-3.5 w-3.5 bg-blue-600 border-2 border-white" />
+                          <span className="relative inline-flex rounded-full h-3 w-3 bg-[#0066ff] border-2 border-white" />
                         </span>
                       )}
                       <div className="absolute -bottom-1 -right-1">
@@ -682,20 +687,41 @@ export default function InboxPage() {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between gap-1">
                         <div className="flex items-center gap-1.5 min-w-0">
-                          <h4 className={`text-sm truncate ${isPopped ? 'font-extrabold text-blue-900' : 'font-bold text-slate-900'}`}>
+                          <h4
+                            className={`text-sm truncate ${
+                              isUnseen
+                                ? 'font-bold text-slate-900'
+                                : 'font-medium text-slate-700'
+                            }`}
+                          >
                             {conv.name}
                           </h4>
-                          {isPopped && (
-                            <span className="px-1.5 py-0.2 text-[9px] font-black uppercase tracking-wider bg-blue-600 text-white rounded-full shrink-0 shadow-2xs">
-                              NEW
-                            </span>
+                        </div>
+                        <div className="flex items-center gap-1.5 shrink-0">
+                          <span
+                            className={`text-xs ${
+                              isUnseen
+                                ? 'text-slate-800 font-bold'
+                                : 'text-slate-400 font-normal'
+                            }`}
+                          >
+                            {conv.time}
+                          </span>
+                          {/* Meta-style Unread Blue Dot */}
+                          {isUnseen && (
+                            <span className="w-2.5 h-2.5 rounded-full bg-[#0066ff] shrink-0" />
                           )}
                         </div>
-                        <span className={`text-xs shrink-0 ${isPopped ? 'text-blue-600 font-bold' : 'text-slate-400 font-medium'}`}>
-                          {conv.time}
-                        </span>
                       </div>
-                      <p className={`text-xs truncate mt-1 leading-snug ${isPopped ? 'text-slate-900 font-bold' : 'text-slate-500'}`}>
+
+                      {/* Message preview: When unread, POPPED OUT like Meta (bold dark text). When seen, regular muted gray */}
+                      <p
+                        className={`truncate mt-1 leading-snug transition-colors ${
+                          isUnseen
+                            ? 'text-slate-950 font-bold text-[13px]'
+                            : 'text-slate-500 font-normal text-xs'
+                        }`}
+                      >
                         {conv.lastMessage}
                       </p>
                     </div>
