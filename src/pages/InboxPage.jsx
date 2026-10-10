@@ -122,7 +122,14 @@ export default function InboxPage() {
 
   useEffect(() => {
     loadConversations();
-    const interval = setInterval(loadConversations, 5000);
+    // Background auto-sync from Meta every 6 seconds so new messages arrive automatically
+    const syncAndLoad = async () => {
+      try {
+        await apiClient.post('/api/integrations/facebook/sync');
+      } catch (_) {}
+      await loadConversations();
+    };
+    const interval = setInterval(syncAndLoad, 6000);
     return () => clearInterval(interval);
   }, [selectedId]);
 
