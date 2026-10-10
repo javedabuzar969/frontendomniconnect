@@ -51,6 +51,8 @@ export default function InboxPage() {
   const [statusFilter, setStatusFilter] = useState('open');
   const [unreadOnly, setUnreadOnly] = useState(false);
   const [replyText, setReplyText] = useState('');
+  // Track which conv IDs just received a new message (for popup highlight)
+  const [newMessageIds, setNewMessageIds] = useState(new Set());
 
   // Dropdown open states
   const [openChatsMenu, setOpenChatsMenu] = useState(false);
@@ -92,11 +94,33 @@ export default function InboxPage() {
       const res = await apiClient.get('/api/conversations');
       if (res.data?.success && Array.isArray(res.data.data) && res.data.data.length > 0) {
         const newData = res.data.data;
-        // Smart diff: only update state if something actually changed (no flash/flicker)
         setConversations((prev) => {
+          // Build prev lookup map for quick comparison
+          const prevMap = new Map(prev.map((c) => [c.id, c.lastMessage]));
+          const newHash = newData.map((c) => c.id + '|' + c.lastMessage + '|' + c.unreadCount).join(',');
           const prevHash = prev.map((c) => c.id + '|' + c.lastMessage + '|' + c.unreadCount).join(',');
-          const newHash  = newData.map((c) => c.id + '|' + c.lastMessage + '|' + c.unreadCount).join(',');
           if (prevHash === newHash) return prev; // nothing changed → no re-render
+
+          // Detect which conversations got NEW messages
+          const updatedIds = newData
+            .filter((c) => {
+              const old = prevMap.get(c.id);
+              return old !== undefined && old !== c.lastMessage; // existing conv with new msg
+            })
+            .map((c) => c.id);
+
+          if (updatedIds.length > 0) {
+            setNewMessageIds((s) => new Set([...s, ...updatedIds]));
+            // Auto-clear highlight after 3 seconds
+            setTimeout(() => {
+              setNewMessageIds((s) => {
+                const next = new Set(s);
+                updatedIds.forEach((id) => next.delete(id));
+                return next;
+              });
+            }, 3000);
+          }
+
           return newData;
         });
         setSelectedId((prev) => prev || newData[0].id);
@@ -537,9 +561,17 @@ export default function InboxPage() {
                 <div
                   key={conv.id}
                   onClick={() => setSelectedId(conv.id)}
-                  className={`p-3.5 sm:p-4 cursor-pointer transition-all duration-300 flex items-start gap-3.5 ${
+                  style={newMessageIds.has(conv.id) ? {
+                    animation: 'newMsgPop 0.4s cubic-bezier(0.34,1.56,0.64,1)',
+                    background: 'linear-gradient(90deg, #eff6ff 0%, #ffffff 100%)',
+                    borderLeft: '3px solid #2563eb',
+                    boxShadow: '0 0 0 2px rgba(37,99,235,0.15)'
+                  } : {}}
+                  className={`p-3.5 sm:p-4 cursor-pointer transition-all duration-500 flex items-start gap-3.5 ${
                     selectedId === conv.id
                       ? 'bg-blue-50/70 border-l-3 border-blue-600'
+                      : newMessageIds.has(conv.id)
+                      ? ''
                       : 'hover:bg-slate-50'
                   }`}
                 >
