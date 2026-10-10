@@ -91,6 +91,24 @@ export default function InboxPage() {
 
   // Keep a ref of conversations for comparison without depending on state
   const convsRef = useRef([]);
+  const selectedIdRef = useRef(selectedId);
+  useEffect(() => {
+    selectedIdRef.current = selectedId;
+  }, [selectedId]);
+
+  const handleSelectConversation = (id) => {
+    setSelectedId(id);
+    setNewMessageIds((s) => {
+      if (!s.has(id)) return s;
+      const next = new Set(s);
+      next.delete(id);
+      return next;
+    });
+    setConversations((prev) =>
+      prev.map((c) => (c.id === id ? { ...c, unread: false, unreadCount: 0 } : c))
+    );
+    apiClient.post(`/api/conversations/${id}/read`).catch(() => {});
+  };
 
   const loadConversations = async () => {
     try {
@@ -115,21 +133,22 @@ export default function InboxPage() {
         // Update ref & state
         convsRef.current = newData;
         setConversations(newData);
-        setSelectedId((p) => p || newData[0].id);
+        if (!selectedIdRef.current && newData.length > 0) {
+          setSelectedId(newData[0].id);
+        }
 
         // Fire side effects OUTSIDE state setter
         if (updatedConvs.length > 0) {
-          const updatedIds = updatedConvs.map((c) => c.id);
+          const currentSelected = selectedIdRef.current;
+          // Unseen IDs: updated conversations that are NOT the currently open chat
+          const unseenUpdated = updatedConvs
+            .filter((c) => c.id !== currentSelected)
+            .map((c) => c.id);
 
-          // Highlight updated chats
-          setNewMessageIds((s) => new Set([...s, ...updatedIds]));
-          setTimeout(() => {
-            setNewMessageIds((s) => {
-              const next = new Set(s);
-              updatedIds.forEach((id) => next.delete(id));
-              return next;
-            });
-          }, 4000);
+          if (unseenUpdated.length > 0) {
+            // Persistent pop: Stays in newMessageIds until user clicks/opens it!
+            setNewMessageIds((s) => new Set([...s, ...unseenUpdated]));
+          }
 
           // Show toast popup for each new message
           updatedConvs.forEach((c) => {
@@ -139,7 +158,7 @@ export default function InboxPage() {
                   style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }}
                   onClick={() => {
                     toast.dismiss(t.id);
-                    setSelectedId(c.id);
+                    handleSelectConversation(c.id);
                   }}
                 >
                   <img
@@ -154,13 +173,13 @@ export default function InboxPage() {
                 </div>
               ),
               {
-                duration: 5000,
+                duration: 6000,
                 style: {
                   padding: '10px 14px',
                   minWidth: 260,
                   maxWidth: 340,
-                  border: '1px solid #e2e8f0',
-                  boxShadow: '0 4px 20px rgba(0,0,0,0.12)',
+                  border: '1px solid #bfdbfe',
+                  boxShadow: '0 8px 30px rgba(37,99,235,0.18)',
                   borderRadius: '12px',
                 },
                 icon: '💬',
@@ -300,7 +319,7 @@ export default function InboxPage() {
       if (activeFolder === 'reminders' && !c.hasReminder) return false;
       if (activeFolder === 'favorites' && !c.isFavorite) return false;
       if (statusFilter !== 'all' && c.status !== statusFilter) return false;
-      if (unreadOnly && !c.unread) return false;
+      if (unreadOnly && !c.unread && !newMessageIds.has(c.id)) return false;
       if (channelFilter !== 'all' && c.channel !== channelFilter) return false;
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase();
@@ -309,7 +328,13 @@ export default function InboxPage() {
       return true;
     })
     .sort((a, b) => {
-      // Always sort newest message first so chats bubble up naturally
+      // Unseen popped chats stay pinned at the very top until seen/clicked
+      const aPopped = newMessageIds.has(a.id);
+      const bPopped = newMessageIds.has(b.id);
+      if (aPopped && !bPopped) return -1;
+      if (!aPopped && bPopped) return 1;
+
+      // Secondary sort: by latest message timestamp
       const aTime = new Date(a.lastMessageAt || 0).getTime();
       const bTime = new Date(b.lastMessageAt || 0).getTime();
       return sortOrder === 'oldest' ? aTime - bTime : bTime - aTime;
@@ -603,58 +628,80 @@ export default function InboxPage() {
                 </div>
               </div>
             ) : (
-              filteredConversations.map((conv) => (
-                <div
-                  key={conv.id}
-                  onClick={() => setSelectedId(conv.id)}
-                  style={newMessageIds.has(conv.id) ? {
-                    animation: 'newMsgPop 0.4s cubic-bezier(0.34,1.56,0.64,1)',
-                    background: 'linear-gradient(90deg, #eff6ff 0%, #ffffff 100%)',
-                    borderLeft: '3px solid #2563eb',
-                    boxShadow: '0 0 0 2px rgba(37,99,235,0.15)'
-                  } : {}}
-                  className={`p-3.5 sm:p-4 cursor-pointer transition-all duration-500 flex items-start gap-3.5 ${
-                    selectedId === conv.id
-                      ? 'bg-blue-50/70 border-l-3 border-blue-600'
-                      : newMessageIds.has(conv.id)
-                      ? ''
-                      : 'hover:bg-slate-50'
-                  }`}
-                >
-                  <div className="relative shrink-0">
-                    <img
-                      src={conv.avatar}
-                      alt={conv.name}
-                      className="w-10 h-10 rounded-full object-cover border border-slate-200"
-                    />
-                    <div className="absolute -bottom-1 -right-1">
-                      {conv.channel === 'whatsapp' ? (
-                        <WhatsAppBrandIcon className="w-4 h-4" />
-                      ) : conv.channel === 'instagram' ? (
-                        <InstagramIcon className="w-4 h-4" />
-                      ) : conv.channel === 'tiktok' ? (
-                        <div className="w-4 h-4 rounded-full bg-black flex items-center justify-center text-white">
-                          <TikTokIcon className="w-2.5 h-2.5" />
-                        </div>
-                      ) : conv.channel === 'telegram' ? (
-                        <TelegramBrandIcon className="w-4 h-4" />
-                      ) : (
-                        <FacebookBrandIcon className="w-4 h-4 text-blue-600" />
-                      )}
-                    </div>
-                  </div>
+              filteredConversations.map((conv) => {
+                const isPopped = newMessageIds.has(conv.id);
+                const isSelected = selectedId === conv.id;
 
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between">
-                      <h4 className="font-bold text-slate-900 text-sm truncate">{conv.name}</h4>
-                      <span className="text-xs text-slate-400 font-medium shrink-0">{conv.time}</span>
+                return (
+                  <div
+                    key={conv.id}
+                    onClick={() => handleSelectConversation(conv.id)}
+                    style={isPopped ? {
+                      animation: 'newMsgPop 0.4s cubic-bezier(0.34,1.56,0.64,1)',
+                      background: 'linear-gradient(90deg, #eff6ff 0%, #ffffff 100%)',
+                      borderLeft: '4px solid #2563eb',
+                      boxShadow: '0 4px 14px rgba(37,99,235,0.14)',
+                    } : {}}
+                    className={`p-3.5 sm:p-4 cursor-pointer transition-all duration-300 flex items-start gap-3.5 ${
+                      isSelected
+                        ? 'bg-blue-50/70 border-l-3 border-blue-600'
+                        : isPopped
+                        ? ''
+                        : 'hover:bg-slate-50'
+                    }`}
+                  >
+                    <div className="relative shrink-0">
+                      <img
+                        src={conv.avatar}
+                        alt={conv.name}
+                        className="w-10 h-10 rounded-full object-cover border border-slate-200"
+                      />
+                      {isPopped && (
+                        <span className="absolute -top-1 -right-1 flex h-3.5 w-3.5">
+                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75" />
+                          <span className="relative inline-flex rounded-full h-3.5 w-3.5 bg-blue-600 border-2 border-white" />
+                        </span>
+                      )}
+                      <div className="absolute -bottom-1 -right-1">
+                        {conv.channel === 'whatsapp' ? (
+                          <WhatsAppBrandIcon className="w-4 h-4" />
+                        ) : conv.channel === 'instagram' ? (
+                          <InstagramIcon className="w-4 h-4" />
+                        ) : conv.channel === 'tiktok' ? (
+                          <div className="w-4 h-4 rounded-full bg-black flex items-center justify-center text-white">
+                            <TikTokIcon className="w-2.5 h-2.5" />
+                          </div>
+                        ) : conv.channel === 'telegram' ? (
+                          <TelegramBrandIcon className="w-4 h-4" />
+                        ) : (
+                          <FacebookBrandIcon className="w-4 h-4 text-blue-600" />
+                        )}
+                      </div>
                     </div>
-                    <p className="text-slate-500 text-xs truncate mt-1 leading-snug">
-                      {conv.lastMessage}
-                    </p>
+
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between gap-1">
+                        <div className="flex items-center gap-1.5 min-w-0">
+                          <h4 className={`text-sm truncate ${isPopped ? 'font-extrabold text-blue-900' : 'font-bold text-slate-900'}`}>
+                            {conv.name}
+                          </h4>
+                          {isPopped && (
+                            <span className="px-1.5 py-0.2 text-[9px] font-black uppercase tracking-wider bg-blue-600 text-white rounded-full shrink-0 shadow-2xs">
+                              NEW
+                            </span>
+                          )}
+                        </div>
+                        <span className={`text-xs shrink-0 ${isPopped ? 'text-blue-600 font-bold' : 'text-slate-400 font-medium'}`}>
+                          {conv.time}
+                        </span>
+                      </div>
+                      <p className={`text-xs truncate mt-1 leading-snug ${isPopped ? 'text-slate-900 font-bold' : 'text-slate-500'}`}>
+                        {conv.lastMessage}
+                      </p>
+                    </div>
                   </div>
-                </div>
-              ))
+                );
+              })
             )}
           </div>
         </div>
