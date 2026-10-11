@@ -122,7 +122,17 @@ export default function ConnectInstagramModal({
         params: { format: 'json' },
       });
 
-      const { oauthUrl, state } = res.data;
+      let { oauthUrl, state } = res.data;
+      if (oauthUrl) {
+        // Automatically sanitize and remove deprecated scopes that Meta rejects
+        oauthUrl = oauthUrl
+          .replace(/instagram_basic%2C/gi, '')
+          .replace(/%2Cinstagram_basic/gi, '')
+          .replace(/instagram_manage_comments%2C/gi, '')
+          .replace(/%2Cinstagram_manage_comments/gi, '')
+          .replace(/%2Cbusiness_management/gi, '')
+          .replace(/business_management%2C/gi, '');
+      }
       setOauthState(state);
 
       // Open OAuth popup
