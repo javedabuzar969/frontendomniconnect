@@ -84,8 +84,6 @@ export default function ConnectViaMetaModal({
       let oauthUrl = res.data?.oauthUrl;
       if (!oauthUrl) throw new Error('Could not get Instagram authorization URL');
       oauthUrl = oauthUrl
-        .replace(/%2Cinstagram_business_basic/gi, '')
-        .replace(/instagram_business_basic%2C/gi, '')
         .replace(/%2Cinstagram_basic/gi, '')
         .replace(/instagram_basic%2C/gi, '');
 
