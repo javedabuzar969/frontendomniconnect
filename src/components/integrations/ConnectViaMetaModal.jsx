@@ -74,41 +74,43 @@ export default function ConnectViaMetaModal({
     }
   };
 
-  // Launch direct Instagram login popup matching Screenshot 2 & 3
-  const handleLaunchInstagramPopup = () => {
+  // Launch official Instagram DM OAuth flow
+  const handleLaunchInstagramPopup = async () => {
     setLoading(true);
-    const redirectUri = window.location.origin + '/meta-callback';
+    try {
+      const res = await apiClient.get('/api/integrations/facebook/instagram/oauth/start', {
+        params: { format: 'json' },
+      });
+      let oauthUrl = res.data?.oauthUrl;
+      if (!oauthUrl) throw new Error('Could not get Instagram authorization URL');
+      oauthUrl = oauthUrl.replace(/instagram_business_basic/gi, 'instagram_basic');
 
-    // Official Instagram login & auth endpoint
-    const instagramLoginUrl = `https://www.instagram.com/accounts/login/?force_authentication=1&platform_app_id=${META_APP_ID}&next=${encodeURIComponent(
-      `/oauth/authorize?client_id=${META_APP_ID}&redirect_uri=${encodeURIComponent(
-        redirectUri
-      )}&scope=user_profile,user_media,instagram_manage_messages&response_type=code`
-    )}`;
+      const width = 640;
+      const height = 760;
+      const left = window.screen.width / 2 - width / 2;
+      const top = window.screen.height / 2 - height / 2;
 
-    const width = 620;
-    const height = 750;
-    const left = window.screen.width / 2 - width / 2;
-    const top = window.screen.height / 2 - height / 2;
+      const popup = window.open(
+        oauthUrl,
+        'InstagramLoginPopup',
+        `width=${width},height=${height},top=${top},left=${left},scrollbars=yes,status=1`
+      );
 
-    const popup = window.open(
-      instagramLoginUrl,
-      'InstagramLoginPopup',
-      `width=${width},height=${height},top=${top},left=${left},scrollbars=yes,status=1`
-    );
-
-    if (!popup || popup.closed || typeof popup.closed === 'undefined') {
-      toast.error('Popup was blocked by your browser. Please allow popups.');
-      setLoading(false);
-      return;
-    }
-
-    const checkClosed = setInterval(() => {
-      if (popup.closed) {
-        clearInterval(checkClosed);
-        setLoading(false);
+      if (!popup || popup.closed || typeof popup.closed === 'undefined') {
+        window.location.href = oauthUrl;
+        return;
       }
-    }, 1000);
+
+      const checkClosed = setInterval(() => {
+        if (popup.closed) {
+          clearInterval(checkClosed);
+          setLoading(false);
+        }
+      }, 1000);
+    } catch (err) {
+      toast.error('Failed to start Instagram Login: ' + err.message);
+      setLoading(false);
+    }
   };
 
   // Launch Facebook / Meta OAuth dialog
