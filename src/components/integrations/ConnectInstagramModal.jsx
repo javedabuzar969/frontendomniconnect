@@ -83,7 +83,6 @@ export default function ConnectInstagramModal({
   // Listen for popup postMessage from OAuth callback
   useEffect(() => {
     function handleMessage(event) {
-      // Accept messages from backend origin or same origin
       if (event.data?.type === 'IG_AUTH_SUCCESS') {
         const { state: receivedState, igCount } = event.data;
         console.log('[Instagram OAuth] Popup success:', receivedState, 'accounts:', igCount);
@@ -117,15 +116,15 @@ export default function ConnectInstagramModal({
     setLoading(true);
     setError(null);
     try {
-      // Get OAuth URL from backend
       const res = await apiClient.get('/api/integrations/facebook/instagram/oauth/start', {
         params: { format: 'json' },
       });
 
       let { oauthUrl, state } = res.data;
       setOauthState(state);
+      // Save state to sessionStorage so we can recover it if postMessage is lost
+      sessionStorage.setItem('ig_oauth_state', state);
 
-      // Open OAuth popup
       const width = 600;
       const height = 750;
       const left = window.screen.width / 2 - width / 2;
@@ -138,12 +137,26 @@ export default function ConnectInstagramModal({
       );
 
       if (!popup) {
-        // Popup blocked — redirect instead
         window.location.href = oauthUrl;
         return;
       }
 
       setStep('waiting');
+
+      // Watch for popup close — if popup closes but postMessage was missed, auto-fetch
+      const checkClosed = setInterval(() => {
+        if (popup.closed) {
+          clearInterval(checkClosed);
+          // Only auto-fetch if still in waiting step
+          setStep((currentStep) => {
+            if (currentStep === 'waiting') {
+              const savedState = sessionStorage.getItem('ig_oauth_state');
+              if (savedState) fetchInstagramAccounts(savedState);
+            }
+            return currentStep;
+          });
+        }
+      }, 800);
     } catch (err) {
       setError('Failed to start Instagram OAuth: ' + (err.response?.data?.error || err.message));
       setStep('error');
@@ -308,14 +321,27 @@ export default function ConnectInstagramModal({
               <h3 className="text-base font-bold text-slate-900 mb-1">Waiting for Instagram authorization...</h3>
               <p className="text-sm text-slate-500">Complete the login in the popup window that opened.</p>
             </div>
+
+            {/* Manual fetch button — in case postMessage was missed */}
+            {oauthState && (
+              <button
+                onClick={() => fetchInstagramAccounts(oauthState)}
+                className="px-5 py-2.5 bg-[#E1306C] hover:bg-[#c1265c] text-white font-semibold text-sm rounded-xl transition-all cursor-pointer flex items-center gap-2"
+              >
+                <Check className="w-4 h-4" />
+                I've already logged in → Fetch my accounts
+              </button>
+            )}
+
             <button
               onClick={handleReset}
-              className="text-xs text-slate-400 hover:text-slate-600 underline cursor-pointer mt-2"
+              className="text-xs text-slate-400 hover:text-slate-600 underline cursor-pointer"
             >
               Cancel and try again
             </button>
           </div>
         )}
+
 
         {/* ACCOUNTS STEP */}
         {step === 'accounts' && (
