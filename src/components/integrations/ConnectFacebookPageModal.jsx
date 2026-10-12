@@ -140,10 +140,8 @@ export default function ConnectFacebookPageModal({
       }
 
       oauthUrl = oauthUrl
-        .replace(/%2Cinstagram_business_basic/gi, '')
-        .replace(/instagram_business_basic%2C/gi, '')
-        .replace(/%2Cinstagram_basic/gi, '')
-        .replace(/instagram_basic%2C/gi, '');
+        .replace(/%2Cinstagram[a-z_]*/gi, '')
+        .replace(/instagram[a-z_]*%2C/gi, '');
 
       setOauthState(state);
 
