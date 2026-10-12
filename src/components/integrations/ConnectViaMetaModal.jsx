@@ -120,10 +120,8 @@ export default function ConnectViaMetaModal({
       'pages_read_engagement',
       'pages_manage_metadata',
       'pages_messaging',
-      'instagram_business_basic',
+      'instagram_basic',
       'instagram_manage_messages',
-      'whatsapp_business_management',
-      'whatsapp_business_messaging',
     ].join(',');
 
     const oauthUrl = `https://www.facebook.com/v21.0/dialog/oauth?client_id=${META_APP_ID}&redirect_uri=${encodeURIComponent(
