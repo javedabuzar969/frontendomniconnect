@@ -81,11 +81,8 @@ export default function ConnectViaMetaModal({
       const res = await apiClient.get('/api/integrations/facebook/instagram/oauth/start', {
         params: { format: 'json' },
       });
-      let oauthUrl = res.data?.oauthUrl;
+      const oauthUrl = res.data?.oauthUrl;
       if (!oauthUrl) throw new Error('Could not get Instagram authorization URL');
-      oauthUrl = oauthUrl
-        .replace(/%2Cinstagram[a-z_]*/gi, '')
-        .replace(/instagram[a-z_]*%2C/gi, '');
 
       const width = 640;
       const height = 760;

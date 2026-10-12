@@ -123,14 +123,6 @@ export default function ConnectInstagramModal({
       });
 
       let { oauthUrl, state } = res.data;
-      if (oauthUrl) {
-        // Strip out any instagram_* and business_management scopes that Facebook Login dialog rejects
-        oauthUrl = oauthUrl
-          .replace(/%2Cinstagram[a-z_]*/gi, '')
-          .replace(/instagram[a-z_]*%2C/gi, '')
-          .replace(/%2Cbusiness_management/gi, '')
-          .replace(/business_management%2C/gi, '');
-      }
       setOauthState(state);
 
       // Open OAuth popup
