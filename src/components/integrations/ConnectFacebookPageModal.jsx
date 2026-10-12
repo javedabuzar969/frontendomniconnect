@@ -132,12 +132,14 @@ export default function ConnectFacebookPageModal({
         params: { format: 'json' },
       });
 
-      const oauthUrl = res.data?.oauthUrl;
+      let oauthUrl = res.data?.oauthUrl;
       const state = res.data?.state;
 
       if (!oauthUrl) {
         throw new Error('Failed to generate Meta OAuth URL');
       }
+
+      oauthUrl = oauthUrl.replace(/instagram_business_basic/gi, 'instagram_basic');
 
       setOauthState(state);
 
