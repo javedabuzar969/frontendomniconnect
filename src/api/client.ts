@@ -11,7 +11,7 @@ const getBaseUrl = (): string => {
     return envUrl;
   }
   if (typeof window !== 'undefined' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
-    return 'https://backendomniconnect-erv8.vercel.app';
+    return 'https://backendomniconnect.vercel.app';
   }
   return envUrl || 'http://localhost:5000';
 };
