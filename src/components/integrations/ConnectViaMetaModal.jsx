@@ -83,7 +83,11 @@ export default function ConnectViaMetaModal({
       });
       let oauthUrl = res.data?.oauthUrl;
       if (!oauthUrl) throw new Error('Could not get Instagram authorization URL');
-      oauthUrl = oauthUrl.replace(/instagram_business_basic/gi, 'instagram_basic');
+      oauthUrl = oauthUrl
+        .replace(/%2Cinstagram_business_basic/gi, '')
+        .replace(/instagram_business_basic%2C/gi, '')
+        .replace(/%2Cinstagram_basic/gi, '')
+        .replace(/instagram_basic%2C/gi, '');
 
       const width = 640;
       const height = 760;
@@ -122,8 +126,6 @@ export default function ConnectViaMetaModal({
       'pages_read_engagement',
       'pages_manage_metadata',
       'pages_messaging',
-      'instagram_basic',
-      'instagram_manage_messages',
     ].join(',');
 
     const oauthUrl = `https://www.facebook.com/v21.0/dialog/oauth?client_id=${META_APP_ID}&redirect_uri=${encodeURIComponent(

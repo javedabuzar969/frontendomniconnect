@@ -124,9 +124,12 @@ export default function ConnectInstagramModal({
 
       let { oauthUrl, state } = res.data;
       if (oauthUrl) {
-        // Automatically sanitize: replace invalid instagram_business_basic with valid instagram_basic
+        // Strip out any unapproved Instagram scopes that cause Meta to error
         oauthUrl = oauthUrl
-          .replace(/instagram_business_basic/gi, 'instagram_basic')
+          .replace(/%2Cinstagram_business_basic/gi, '')
+          .replace(/instagram_business_basic%2C/gi, '')
+          .replace(/%2Cinstagram_basic/gi, '')
+          .replace(/instagram_basic%2C/gi, '')
           .replace(/%2Cbusiness_management/gi, '')
           .replace(/business_management%2C/gi, '');
       }
