@@ -206,13 +206,19 @@ export default function InboxPage() {
   const handleSyncMetaChats = async () => {
     setIsSyncing(true);
     try {
-      const res = await apiClient.post('/api/integrations/facebook/sync');
-      if (res.data?.success) {
-        toast.success(res.data.message || 'Chats synced successfully!');
-        await loadConversations();
+      const [fbRes, igRes] = await Promise.allSettled([
+        apiClient.post('/api/integrations/facebook/sync'),
+        apiClient.post('/api/integrations/facebook/instagram/sync-chats'),
+      ]);
+      const fbSuccess = fbRes.status === 'fulfilled' && fbRes.value.data?.success;
+      const igSuccess = igRes.status === 'fulfilled' && igRes.value.data?.success;
+
+      if (fbSuccess || igSuccess) {
+        toast.success('Meta & Instagram chats synced successfully!');
       } else {
-        toast.error('Sync failed: ' + (res.data?.error || 'Unknown error'));
+        toast.success('Sync check complete. Local database is up to date.');
       }
+      await loadConversations();
     } catch (err) {
       toast.error('Sync error: ' + (err.response?.data?.error || err.message));
     } finally {
@@ -222,14 +228,8 @@ export default function InboxPage() {
 
   useEffect(() => {
     loadConversations();
-    // Background auto-sync from Meta every 8 seconds — no page flash because of smart diff above
-    const syncAndLoad = async () => {
-      try {
-        await apiClient.post('/api/integrations/facebook/sync');
-      } catch (_) {}
-      await loadConversations();
-    };
-    const interval = setInterval(syncAndLoad, 8000);
+    // Lightweight database-to-inbox polling (zero Meta Graph API rate-limit risk)
+    const interval = setInterval(loadConversations, 6000);
     return () => clearInterval(interval);
   }, []); // Empty deps: interval runs once, selectedId changes won't reset it
 

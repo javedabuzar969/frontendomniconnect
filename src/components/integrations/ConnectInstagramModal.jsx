@@ -83,12 +83,15 @@ export default function ConnectInstagramModal({
   // Listen for popup postMessage from OAuth callback
   useEffect(() => {
     function handleMessage(event) {
-      if (event.data?.type === 'IG_AUTH_SUCCESS') {
-        const { state: receivedState, igCount } = event.data;
+      if (event.data?.type === 'IG_AUTH_SUCCESS' || event.data?.type === 'META_AUTH_SUCCESS') {
+        const receivedState = event.data.state;
+        const igCount = event.data.igCount || event.data.pagesCount || 0;
         console.log('[Instagram OAuth] Popup success:', receivedState, 'accounts:', igCount);
-        setOauthState(receivedState);
-        fetchInstagramAccounts(receivedState);
-      } else if (event.data?.type === 'IG_AUTH_ERROR') {
+        if (receivedState) {
+          setOauthState(receivedState);
+          fetchInstagramAccounts(receivedState);
+        }
+      } else if (event.data?.type === 'IG_AUTH_ERROR' || event.data?.type === 'META_AUTH_ERROR') {
         setError(`Instagram authorization failed: ${event.data.error || 'cancelled'}`);
         setStep('error');
       }
