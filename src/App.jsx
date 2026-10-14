@@ -12,6 +12,9 @@ import OnboardingPage from './pages/OnboardingPage';
 import ConnectFacebookPage from './pages/ConnectFacebookPage';
 import ConnectInstagramPage from './pages/ConnectInstagramPage';
 import MetaCallbackPage from './pages/MetaCallbackPage';
+import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
+import TermsPage from './pages/TermsPage';
+import DataDeletionPage from './pages/DataDeletionPage';
 
 // ── Protected Route wrapper ────────────────────────────────
 // If user is not logged in → redirect to /login
@@ -100,6 +103,13 @@ export default function App() {
         <Route path="/dashboard" element={<Navigate to="/home" replace />} />
         <Route path="/integrations" element={<Navigate to="/settings?tab=integrations" replace />} />
       </Route>
+
+      {/* Public: Legal & compliance pages — accessible to everyone without login */}
+      <Route path="/privacy" element={<PrivacyPolicyPage />} />
+      <Route path="/privacy-policy" element={<Navigate to="/privacy" replace />} />
+      <Route path="/terms" element={<TermsPage />} />
+      <Route path="/terms-of-service" element={<Navigate to="/terms" replace />} />
+      <Route path="/data-deletion" element={<DataDeletionPage />} />
 
       {/* Default */}
       <Route path="/" element={<Navigate to="/login" replace />} />

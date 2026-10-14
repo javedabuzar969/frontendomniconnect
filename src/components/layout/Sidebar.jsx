@@ -1,6 +1,6 @@
 // components/layout/Sidebar.jsx
 import React, { useState, useRef, useEffect } from 'react';
-import { NavLink, useNavigate } from 'react-router-dom';
+import { NavLink, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import {
   Home,
@@ -376,8 +376,28 @@ export default function Sidebar({ onUpgradeClick, isMobile = false, onCloseMobil
                 </div>
               </div>
 
+              {/* Legal Links */}
+              <div className="py-1 border-t border-slate-100">
+                <Link
+                  to="/privacy"
+                  onClick={() => setShowProfileMenu(false)}
+                  className="w-full flex items-center gap-2 px-4 py-2 text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition-colors text-xs font-normal"
+                >
+                  <FileText size={13} className="text-slate-400" />
+                  <span>Privacy Policy</span>
+                </Link>
+                <Link
+                  to="/terms"
+                  onClick={() => setShowProfileMenu(false)}
+                  className="w-full flex items-center gap-2 px-4 py-2 text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition-colors text-xs font-normal"
+                >
+                  <FileText size={13} className="text-slate-400" />
+                  <span>Terms of Service</span>
+                </Link>
+              </div>
+
               {/* Log out */}
-              <div className="pt-2">
+              <div className="pt-1 border-t border-slate-100">
                 <button
                   onClick={handleLogout}
                   className="w-full flex items-center gap-2 px-4 py-2 text-red-600 hover:bg-red-50 font-normal transition-colors"
@@ -447,6 +467,21 @@ export default function Sidebar({ onUpgradeClick, isMobile = false, onCloseMobil
                   <ChevronsLeft size={14} />
                 </button>
               )}
+            </div>
+
+            {/* Footer legal links */}
+            <div className="px-1 pt-2.5 mt-2 border-t border-slate-100 flex items-center justify-center gap-2.5 text-[10px] text-slate-400">
+              <Link to="/privacy" className="hover:text-blue-600 hover:underline">
+                Privacy
+              </Link>
+              <span>•</span>
+              <Link to="/terms" className="hover:text-blue-600 hover:underline">
+                Terms
+              </Link>
+              <span>•</span>
+              <Link to="/data-deletion" className="hover:text-blue-600 hover:underline">
+                Deletion
+              </Link>
             </div>
           </div>
         )}

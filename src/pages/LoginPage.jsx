@@ -1,6 +1,6 @@
 // pages/LoginPage.jsx — Real MongoDB Auth (Login + Signup)
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { Mail, Lock, User, Globe, ChevronDown, Check, Eye, EyeOff } from 'lucide-react';
 import Omniconnect from '../components/ui/Omniconnect';
 import { useAuth } from '../contexts/AuthContext';
@@ -245,14 +245,20 @@ export default function LoginPage() {
       </main>
 
       {/* Footer */}
-      <footer className="w-full px-6 sm:px-12 py-6 flex items-center justify-center md:justify-end">
+      <footer className="w-full px-6 sm:px-12 py-6 flex items-center justify-between flex-wrap gap-3">
+        <span className="text-xs text-slate-400">
+          © {new Date().getFullYear()} OmniConnect. All rights reserved.
+        </span>
         <div className="flex items-center gap-4 text-xs text-[#0066ff]">
-          <a href="#terms" onClick={(e) => e.preventDefault()} className="hover:underline">
+          <Link to="/terms" className="hover:underline">
             Terms of Service
-          </a>
-          <a href="#privacy" onClick={(e) => e.preventDefault()} className="hover:underline">
+          </Link>
+          <Link to="/privacy" className="hover:underline">
             Privacy Policy
-          </a>
+          </Link>
+          <Link to="/data-deletion" className="hover:underline text-slate-500 hover:text-slate-700">
+            Data Deletion
+          </Link>
         </div>
       </footer>
     </div>
