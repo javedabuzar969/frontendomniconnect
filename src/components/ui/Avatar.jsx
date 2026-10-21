@@ -1,7 +1,9 @@
-// components/ui/Avatar.jsx
+import React, { useState } from 'react';
 import { getInitials, cn } from '../../utils/helpers';
 
-export default function Avatar({ name = '', size = 'md', className = '' }) {
+export default function Avatar({ src, name = '', size = 'md', className = '' }) {
+  const [imageFailed, setImageFailed] = useState(false);
+
   const sizes = {
     xs:  'w-6 h-6 text-xs',
     sm:  'w-8 h-8 text-xs',
@@ -9,6 +11,19 @@ export default function Avatar({ name = '', size = 'md', className = '' }) {
     lg:  'w-12 h-12 text-base',
     xl:  'w-16 h-16 text-xl',
   };
+
+  const validSrc = typeof src === 'string' && src.trim() && src.trim() !== 'null' && src.trim() !== 'undefined' && src.trim().startsWith('http');
+
+  if (validSrc && !imageFailed) {
+    return (
+      <img
+        src={src.trim()}
+        alt={name || 'Avatar'}
+        onError={() => setImageFailed(true)}
+        className={cn('rounded-full object-cover shrink-0', sizes[size], className)}
+      />
+    );
+  }
 
   // Generate a consistent color from the name
   const colors = [
@@ -20,7 +35,7 @@ export default function Avatar({ name = '', size = 'md', className = '' }) {
     'from-teal-500 to-green-600',
   ];
   const colorIndex =
-    name.split('').reduce((acc, c) => acc + c.charCodeAt(0), 0) % colors.length;
+    (name || 'User').split('').reduce((acc, c) => acc + c.charCodeAt(0), 0) % colors.length;
 
   return (
     <div
@@ -31,7 +46,7 @@ export default function Avatar({ name = '', size = 'md', className = '' }) {
         className
       )}
     >
-      {getInitials(name)}
+      {getInitials(name || 'User')}
     </div>
   );
 }

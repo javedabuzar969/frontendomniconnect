@@ -24,9 +24,17 @@ const apiClient = axios.create({
   },
 });
 
-// Request interceptor — attach JWT from memory if cookie auth unavailable
+// Request interceptor — attach token from localStorage (__oc_token) or sessionStorage (__ag_jwt) fallback
 apiClient.interceptors.request.use((config) => {
-  const token = sessionStorage.getItem('__ag_jwt'); // Memory fallback only
+  let token: string | null = null;
+  try {
+    if (typeof window !== 'undefined') {
+      token = localStorage.getItem('__oc_token') || sessionStorage.getItem('__ag_jwt');
+    }
+  } catch {
+    token = null;
+  }
+
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
@@ -38,7 +46,12 @@ apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      sessionStorage.removeItem('__ag_jwt');
+      try {
+        localStorage.removeItem('__oc_token');
+        sessionStorage.removeItem('__ag_jwt');
+      } catch {
+        // Safe storage cleanup
+      }
       window.location.href = '/login';
     }
     return Promise.reject(error);

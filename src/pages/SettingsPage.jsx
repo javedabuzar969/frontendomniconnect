@@ -569,6 +569,40 @@ export default function SettingsPage() {
             })}
           </div>
         </div>
+
+        {/* Section: Legal & Compliance */}
+        <div className="mb-5 pt-3 border-t border-slate-100">
+          <div className="pb-1 text-[11px] font-bold text-slate-400 uppercase tracking-wider">Compliance</div>
+          <div className="space-y-0.5">
+            <a
+              href="/privacy"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-full flex items-center justify-between text-left py-1 text-[13.5px] text-slate-600 hover:text-slate-900 font-normal transition-colors cursor-pointer group"
+            >
+              <span>Privacy Policy</span>
+              <ExternalLink size={12} className="text-slate-400 group-hover:text-slate-600" />
+            </a>
+            <a
+              href="/terms"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-full flex items-center justify-between text-left py-1 text-[13.5px] text-slate-600 hover:text-slate-900 font-normal transition-colors cursor-pointer group"
+            >
+              <span>Terms of Service</span>
+              <ExternalLink size={12} className="text-slate-400 group-hover:text-slate-600" />
+            </a>
+            <a
+              href="/data-deletion"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-full flex items-center justify-between text-left py-1 text-[13.5px] text-slate-600 hover:text-slate-900 font-normal transition-colors cursor-pointer group"
+            >
+              <span>Data Deletion</span>
+              <ExternalLink size={12} className="text-slate-400 group-hover:text-slate-600" />
+            </a>
+          </div>
+        </div>
       </aside>
 
       {/* Main Content Area */}

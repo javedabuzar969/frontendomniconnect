@@ -98,6 +98,24 @@ export default function InboxPage() {
     selectedIdRef.current = selectedId;
   }, [selectedId]);
 
+  const getSafeAvatarUrl = (avatarUrl, name) => {
+    if (typeof avatarUrl === 'string') {
+      const trimmed = avatarUrl.trim();
+      if (trimmed && trimmed !== 'null' && trimmed !== 'undefined' && trimmed.startsWith('http')) {
+        return trimmed;
+      }
+    }
+    const seed = encodeURIComponent((name || 'User').trim());
+    return `https://api.dicebear.com/7.x/initials/svg?seed=${seed}&backgroundColor=0066ff&textColor=ffffff`;
+  };
+
+  const handleAvatarError = (e, fallbackName) => {
+    if (e.currentTarget.dataset.fallbackApplied) return;
+    e.currentTarget.dataset.fallbackApplied = 'true';
+    const seed = encodeURIComponent((fallbackName || 'User').trim());
+    e.currentTarget.src = `https://api.dicebear.com/7.x/initials/svg?seed=${seed}&backgroundColor=0066ff&textColor=ffffff`;
+  };
+
   const handleSelectConversation = (id) => {
     setSelectedId(id);
     setSeenIds((prev) => new Set([...prev, id]));
@@ -168,8 +186,9 @@ export default function InboxPage() {
                   }}
                 >
                   <img
-                    src={c.avatar}
+                    src={getSafeAvatarUrl(c.avatar, c.name)}
                     alt={c.name}
+                    onError={(e) => handleAvatarError(e, c.name)}
                     style={{ width: 38, height: 38, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }}
                   />
                   <div>
@@ -657,8 +676,9 @@ export default function InboxPage() {
                   >
                     <div className="relative shrink-0">
                       <img
-                        src={conv.avatar}
+                        src={getSafeAvatarUrl(conv.avatar, conv.name)}
                         alt={conv.name}
+                        onError={(e) => handleAvatarError(e, conv.name)}
                         className="w-10 h-10 rounded-full object-cover border border-slate-200"
                       />
                       {isUnseen && (
@@ -752,8 +772,9 @@ export default function InboxPage() {
                     <ChevronLeft size={22} />
                   </button>
                   <img
-                    src={selectedConv.avatar}
+                    src={getSafeAvatarUrl(selectedConv.avatar, selectedConv.name)}
                     alt={selectedConv.name}
+                    onError={(e) => handleAvatarError(e, selectedConv.name)}
                     className="w-10 h-10 rounded-full object-cover border border-slate-200 shrink-0"
                   />
                   <div className="min-w-0">

@@ -1,149 +1,164 @@
-// src/contexts/AuthContext.jsx
-// Standalone client-side auth state using localStorage (No MongoDB or backend required)
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { apiClient } from '../api/client';
+import { supabase } from '../lib/supabase';
 
 const AuthContext = createContext(null);
 
-const USERS_KEY = '__oc_registered_users';
 const CURRENT_USER_KEY = '__oc_current_user';
 const TOKEN_KEY = '__oc_token';
-
-// Initial demo user so anyone can log in directly if they want
-const DEFAULT_DEMO_USER = {
-  id: 'user_demo_1',
-  name: 'Demo Admin',
-  email: 'admin@omniconnect.com',
-  password: 'password123',
-  plan: 'pro',
-  workspace: "Demo's Workspace",
-  contacts: 12,
-  createdAt: new Date().toISOString(),
-};
-
-function getStoredUsers() {
-  try {
-    const raw = localStorage.getItem(USERS_KEY);
-    if (!raw) {
-      const initial = [DEFAULT_DEMO_USER];
-      localStorage.setItem(USERS_KEY, JSON.stringify(initial));
-      return initial;
-    }
-    return JSON.parse(raw);
-  } catch {
-    return [DEFAULT_DEMO_USER];
-  }
-}
-
-function saveStoredUsers(users) {
-  try {
-    localStorage.setItem(USERS_KEY, JSON.stringify(users));
-  } catch (err) {
-    console.error('Failed to save users in localStorage', err);
-  }
-}
+const LEGACY_TOKEN_KEY = '__ag_jwt';
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // ── Initialize auth on startup from localStorage ────────
+  // ── Initialize auth & handle Google OAuth redirect callback ───
   useEffect(() => {
-    try {
-      const savedUser = localStorage.getItem(CURRENT_USER_KEY);
-      const token = localStorage.getItem(TOKEN_KEY);
-      if (savedUser && token) {
-        setUser(JSON.parse(savedUser));
+    async function initAuth() {
+      try {
+        // 1. Check if returning from Supabase Google OAuth
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user?.email) {
+          try {
+            const googleRes = await apiClient.post('/api/auth/google', {
+              email: session.user.email,
+              name: session.user.user_metadata?.full_name || session.user.email.split('@')[0],
+              supabaseToken: session.access_token,
+            });
+
+            const { token, user: authenticatedUser } = googleRes.data;
+            if (token && authenticatedUser) {
+              localStorage.setItem(TOKEN_KEY, token);
+              sessionStorage.setItem(LEGACY_TOKEN_KEY, token);
+              localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(authenticatedUser));
+              setUser(authenticatedUser);
+              // Clean hash parameters from URL
+              if (window.location.hash) {
+                window.history.replaceState(null, '', window.location.pathname);
+              }
+              setLoading(false);
+              return;
+            }
+          } catch (gErr) {
+            console.warn('Google backend session exchange warning:', gErr.message);
+          }
+        }
+
+        // 2. Existing standard session restore
+        const savedUser = localStorage.getItem(CURRENT_USER_KEY);
+        const token = localStorage.getItem(TOKEN_KEY) || sessionStorage.getItem(LEGACY_TOKEN_KEY);
+        if (savedUser && token) {
+          setUser(JSON.parse(savedUser));
+          localStorage.setItem(TOKEN_KEY, token);
+          sessionStorage.setItem(LEGACY_TOKEN_KEY, token);
+        }
+      } catch {
+        localStorage.removeItem(CURRENT_USER_KEY);
+        localStorage.removeItem(TOKEN_KEY);
+        sessionStorage.removeItem(LEGACY_TOKEN_KEY);
+        setUser(null);
+      } finally {
+        setLoading(false);
       }
-    } catch {
-      localStorage.removeItem(CURRENT_USER_KEY);
-      localStorage.removeItem(TOKEN_KEY);
-      setUser(null);
-    } finally {
-      setLoading(false);
     }
+
+    initAuth();
   }, []);
 
   // ── Signup ──────────────────────────────────────────────
   const signup = async ({ name, email, password }) => {
     const cleanEmail = email.toLowerCase().trim();
     const cleanName = name.trim();
-    const users = getStoredUsers();
 
-    // Check if account already exists
-    const existing = users.find((u) => u.email.toLowerCase() === cleanEmail);
-    if (existing) {
-      throw new Error('An account with this email already exists. Please log in.');
+    try {
+      const res = await apiClient.post('/api/auth/signup', {
+        name: cleanName,
+        email: cleanEmail,
+        password,
+      });
+
+      const { token, user: authenticatedUser } = res.data;
+      if (!token || !authenticatedUser) {
+        throw new Error('Authentication response did not contain a valid session token.');
+      }
+
+      localStorage.setItem(TOKEN_KEY, token);
+      sessionStorage.setItem(LEGACY_TOKEN_KEY, token);
+      localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(authenticatedUser));
+
+      setUser(authenticatedUser);
+      return authenticatedUser;
+    } catch (err) {
+      const msg = err.response?.data?.error || err.message || 'Signup failed';
+      throw new Error(msg);
     }
-
-    const newUser = {
-      id: `user_${Date.now()}`,
-      name: cleanName,
-      email: cleanEmail,
-      password: password,
-      plan: 'free',
-      workspace: `${cleanName.split(' ')[0]}'s Workspace`,
-      contacts: 0,
-      createdAt: new Date().toISOString(),
-    };
-
-    users.push(newUser);
-    saveStoredUsers(users);
-
-    const token = `token_${Date.now()}_${Math.random().toString(36).substring(2)}`;
-    localStorage.setItem(TOKEN_KEY, token);
-    localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(newUser));
-
-    setUser(newUser);
-    return newUser;
   };
 
   // ── Login ───────────────────────────────────────────────
   const login = async ({ email, password }) => {
     const cleanEmail = email.toLowerCase().trim();
-    const users = getStoredUsers();
 
-    let foundUser = users.find((u) => u.email.toLowerCase() === cleanEmail);
-
-    if (!foundUser) {
-      // If user is logging in for first time without signup, automatically create their account for a seamless experience
-      const namePart = cleanEmail.split('@')[0];
-      const autoName = namePart.charAt(0).toUpperCase() + namePart.slice(1);
-      foundUser = {
-        id: `user_${Date.now()}`,
-        name: autoName,
+    try {
+      const res = await apiClient.post('/api/auth/login', {
         email: cleanEmail,
-        password: password,
-        plan: 'free',
-        workspace: `${autoName}'s Workspace`,
-        contacts: 0,
-        createdAt: new Date().toISOString(),
-      };
-      users.push(foundUser);
-      saveStoredUsers(users);
-    } else {
-      // If found, check password if set
-      if (foundUser.password && foundUser.password !== password) {
-        throw new Error('Invalid email or password');
+        password,
+      });
+
+      const { token, user: authenticatedUser } = res.data;
+      if (!token || !authenticatedUser) {
+        throw new Error('Authentication response did not contain a valid session token.');
       }
+
+      localStorage.setItem(TOKEN_KEY, token);
+      sessionStorage.setItem(LEGACY_TOKEN_KEY, token);
+      localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(authenticatedUser));
+
+      setUser(authenticatedUser);
+      return authenticatedUser;
+    } catch (err) {
+      const msg = err.response?.data?.error || err.message || 'Login failed';
+      throw new Error(msg);
     }
+  };
 
-    const token = `token_${Date.now()}_${Math.random().toString(36).substring(2)}`;
-    localStorage.setItem(TOKEN_KEY, token);
-    localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(foundUser));
+  // ── Login with Google ────────────────────────────────────
+  const loginWithGoogle = async () => {
+    try {
+      const redirectUrl = window.location.origin + '/login';
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: redirectUrl,
+          queryParams: {
+            access_type: 'offline',
+            prompt: 'consent',
+          },
+        },
+      });
 
-    setUser(foundUser);
-    return foundUser;
+      if (error) {
+        throw new Error(error.message || 'Google sign-in initialization failed');
+      }
+
+      return data;
+    } catch (err) {
+      throw new Error(err.message || 'Failed to start Google sign-in');
+    }
   };
 
   // ── Logout ──────────────────────────────────────────────
-  const logout = () => {
+  const logout = async () => {
+    try {
+      await supabase.auth.signOut();
+    } catch (_) {}
     localStorage.removeItem(TOKEN_KEY);
+    sessionStorage.removeItem(LEGACY_TOKEN_KEY);
     localStorage.removeItem(CURRENT_USER_KEY);
     setUser(null);
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, signup, logout }}>
+    <AuthContext.Provider value={{ user, loading, login, signup, loginWithGoogle, logout }}>
       {children}
     </AuthContext.Provider>
   );
@@ -155,4 +170,3 @@ export function useAuth() {
   if (!ctx) throw new Error('useAuth must be used inside <AuthProvider>');
   return ctx;
 }
-

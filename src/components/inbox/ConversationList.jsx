@@ -65,7 +65,7 @@ export default function ConversationList({ conversations, selectedId, onSelect, 
           >
             {/* Avatar */}
             <div className="relative shrink-0">
-              <Avatar name={conv.customer?.name || 'User'} size="md" />
+              <Avatar src={conv.avatar} name={conv.customer?.name || conv.name || 'User'} size="md" />
               <span className="absolute -bottom-0.5 -right-0.5 w-4.5 h-4.5 rounded-full bg-white border border-slate-200 flex items-center justify-center shadow-xs">
                 <ChannelIcon type={conv.channelType} />
               </span>
