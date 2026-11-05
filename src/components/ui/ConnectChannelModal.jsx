@@ -6,6 +6,7 @@ import {
   InstagramIcon,
   WhatsAppBrandIcon,
   TelegramBrandIcon,
+  SalesforceBrandIcon,
 } from './Icons';
 import toast from 'react-hot-toast';
 
@@ -75,6 +76,14 @@ export default function ConnectChannelModal({ isOpen, onClose, onConnect }) {
       buttonText: 'Connect',
       badge: 'UPGRADE',
     },
+    {
+      id: 'salesforce',
+      name: 'Salesforce CRM',
+      icon: <SalesforceBrandIcon className="w-7 h-7" />,
+      description: 'Sync leads, contacts, and customer conversations to your Salesforce CRM.',
+      buttonText: 'Connect',
+      badge: 'OAUTH',
+    },
   ];
 
   const handleAction = (ch) => {
@@ -86,7 +95,7 @@ export default function ConnectChannelModal({ isOpen, onClose, onConnect }) {
   };
 
   const topRow = channels.slice(0, 3);
-  const bottomRow = channels.slice(3, 5);
+  const bottomRow = channels.slice(3, 6);
 
   return (
     <div
@@ -153,12 +162,12 @@ export default function ConnectChannelModal({ isOpen, onClose, onConnect }) {
             ))}
           </div>
 
-          {/* Bottom Row: Telegram, SMS (centered) */}
-          <div className="flex flex-col sm:flex-row justify-center gap-5 sm:gap-6">
+          {/* Bottom Row: Telegram, SMS, Salesforce CRM */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5 sm:gap-6">
             {bottomRow.map((ch) => (
               <div
                 key={ch.id}
-                className="w-full sm:w-[260px] bg-white border border-slate-200/90 rounded-2xl p-6 sm:p-7 flex flex-col items-center text-center justify-between shadow-2xs hover:shadow-sm transition-shadow min-h-[240px]"
+                className="bg-white border border-slate-200/90 rounded-2xl p-6 sm:p-7 flex flex-col items-center text-center justify-between shadow-2xs hover:shadow-sm transition-shadow min-h-[240px]"
               >
                 {/* Icon & Title */}
                 <div className="flex flex-col items-center">

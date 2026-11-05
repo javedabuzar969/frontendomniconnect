@@ -7,6 +7,7 @@ import ConnectInstagramModal from '../components/integrations/ConnectInstagramMo
 import ConnectViaMetaModal from '../components/integrations/ConnectViaMetaModal';
 import ProUpgradeModal from '../components/ui/ProUpgradeModal';
 import { apiClient } from '../api/client';
+import { getSalesforceConnectUrl } from '../api/integrations';
 import {
   Search,
   Settings,
@@ -267,6 +268,43 @@ export default function InboxPage() {
       const nextParams = new URLSearchParams(searchParams);
       nextParams.delete('proTrial');
       setSearchParams(nextParams, { replace: true });
+    }
+  };
+
+  const handleConnectSalesforce = async () => {
+    try {
+      toast.loading('Opening Salesforce authorization...', { id: 'sf-auth' });
+      const data = await getSalesforceConnectUrl();
+      if (!data?.oauthUrl) {
+        throw new Error(data?.error || 'Failed to generate Salesforce OAuth URL');
+      }
+
+      toast.dismiss('sf-auth');
+
+      const width = 640;
+      const height = 720;
+      const left = window.screen.width / 2 - width / 2;
+      const top = window.screen.height / 2 - height / 2;
+      window.open(
+        data.oauthUrl,
+        'SalesforceOAuth',
+        `toolbar=no,location=no,status=no,menubar=no,scrollbars=yes,resizable=yes,width=${width},height=${height},top=${top},left=${left}`
+      );
+
+      const messageHandler = (event) => {
+        if (event.data?.type === 'SALESFORCE_CONNECTED') {
+          window.removeEventListener('message', messageHandler);
+          toast.success('🎉 Salesforce CRM connected successfully!');
+        } else if (event.data?.type === 'SALESFORCE_AUTH_ERROR') {
+          window.removeEventListener('message', messageHandler);
+          toast.error(event.data.error || 'Salesforce authorization failed.');
+        }
+      };
+
+      window.addEventListener('message', messageHandler);
+    } catch (err) {
+      toast.dismiss('sf-auth');
+      toast.error(err.response?.data?.error || err.message || 'Failed to connect Salesforce');
     }
   };
 
@@ -930,6 +968,8 @@ export default function InboxPage() {
           } else if (ch.id === 'whatsapp') {
             setMetaChannelName(ch.name);
             setShowConnectViaMetaModal(true);
+          } else if (ch.id === 'salesforce') {
+            handleConnectSalesforce();
           } else {
             toast.success(`${ch.name} connection initiated!`);
           }
