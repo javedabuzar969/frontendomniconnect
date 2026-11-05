@@ -224,7 +224,7 @@ export default function SettingsPage() {
   };
 
   useEffect(() => {
-    if (activeTab === 'integrations') {
+    if (activeTab === 'integrations' || activeTab === 'salesforce') {
       loadSalesforceStatus();
     }
   }, [activeTab]);
@@ -298,6 +298,10 @@ export default function SettingsPage() {
     }
     if (channelId === 'messenger') {
       setShowFacebookModal(true);
+      return;
+    }
+    if (channelId === 'salesforce') {
+      handleConnectSalesforce();
       return;
     }
 
@@ -440,6 +444,24 @@ export default function SettingsPage() {
         </div>
       ),
       illustration: <TelegramIllustration className="w-56 h-56 sm:w-64 sm:h-64 animate-fade-in" />,
+    },
+    {
+      id: 'salesforce',
+      label: 'Salesforce',
+      title: 'Salesforce CRM Channel',
+      subtitle: 'Sync leads, contacts, and customer conversations automatically with your Salesforce CRM.',
+      hasLearnMore: false,
+      activeColor: 'text-[#00A1E0]',
+      icon: (
+        <div className="w-4 h-4 rounded-full bg-[#00A1E0] flex items-center justify-center text-white shrink-0">
+          <SalesforceBrandIcon className="w-2.5 h-2.5 text-white" />
+        </div>
+      ),
+      illustration: (
+        <div className="w-44 h-44 sm:w-52 sm:h-52 flex items-center justify-center bg-sky-50 rounded-3xl border border-sky-100 shadow-sm animate-fade-in">
+          <SalesforceBrandIcon className="w-24 h-24" />
+        </div>
+      ),
     },
   ];
 
@@ -1307,7 +1329,42 @@ export default function SettingsPage() {
 
               {/* Connect Button or Connected Info */}
               <div className="mt-7 sm:mt-8 flex flex-col items-center gap-3">
-                {channelStatus[activeTab]?.connected ? (
+                {activeTab === 'salesforce' ? (
+                  salesforceStatus.connected ? (
+                    <div className="flex flex-col items-center gap-3 animate-fade-in">
+                      <div className="flex items-center gap-2 px-3.5 py-1.5 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-full text-xs font-semibold">
+                        <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                        <span>Connected to {salesforceStatus.instanceUrl ? salesforceStatus.instanceUrl.replace(/^https?:\/\//, '') : 'Salesforce CRM'}</span>
+                      </div>
+                      {salesforceStatus.orgId && (
+                        <div className="text-[11px] font-mono text-slate-500">Org ID: {salesforceStatus.orgId}</div>
+                      )}
+                      <div className="flex gap-2">
+                        <button
+                          onClick={handleConnectSalesforce}
+                          className="px-4 py-1.5 bg-white border border-slate-200 hover:border-slate-300 text-slate-700 rounded-lg text-xs font-semibold transition-all cursor-pointer shadow-xs"
+                        >
+                          Re-authorize
+                        </button>
+                        <button
+                          onClick={handleDisconnectSalesforce}
+                          className="px-4 py-1.5 bg-rose-50 border border-rose-200 hover:border-rose-300 text-rose-600 rounded-lg text-xs font-semibold transition-all cursor-pointer"
+                        >
+                          Disconnect
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={handleConnectSalesforce}
+                      disabled={salesforceStatus.loading}
+                      className="px-8 py-2.5 bg-[#00A1E0] hover:bg-[#008bc2] text-white font-semibold text-sm rounded-lg transition-all shadow-xs hover:shadow active:scale-95 cursor-pointer flex items-center gap-2"
+                    >
+                      <SalesforceBrandIcon className="w-4 h-4" />
+                      <span>{salesforceStatus.loading ? 'Checking...' : 'Connect Salesforce Account'}</span>
+                    </button>
+                  )
+                ) : channelStatus[activeTab]?.connected ? (
                   <div className="flex flex-col items-center gap-3 animate-fade-in">
                     <div className="flex items-center gap-2 px-3.5 py-1.5 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-full text-xs font-semibold">
                       <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
