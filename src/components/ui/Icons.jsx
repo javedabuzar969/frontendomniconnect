@@ -245,3 +245,16 @@ export function InboxIllustration({ className = 'w-64 h-52' }) {
     </div>
   );
 }
+
+export function SalesforceBrandIcon({ className = 'w-5 h-5' }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none">
+      <circle cx="12" cy="12" r="11" fill="#00A1E0" />
+      <path
+        d="M17.4 11.2c-.3-.9-1-1.6-1.9-1.9-.3-.8-.9-1.5-1.7-1.8-.8-.4-1.7-.4-2.5-.1-.7-.8-1.7-1.2-2.8-1.1-1.3.1-2.4 1-2.8 2.2-.7.2-1.3.7-1.7 1.3-.4.7-.5 1.5-.2 2.2-.5.5-.8 1.2-.8 1.9 0 1.5 1.2 2.7 2.7 2.7h11.2c1.3 0 2.4-1.1 2.4-2.4 0-1.4-1-2.6-2.4-2.7-.2-.2-.3-.3-.5-.3z"
+        fill="#ffffff"
+      />
+    </svg>
+  );
+}
+

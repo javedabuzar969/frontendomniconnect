@@ -19,7 +19,13 @@ import {
   WhatsAppBrandIcon,
   MessengerBrandIcon,
   TelegramBrandIcon,
+  SalesforceBrandIcon,
 } from '../components/ui/Icons';
+import {
+  getSalesforceConnectUrl,
+  getSalesforceStatus,
+  disconnectSalesforce,
+} from '../api/integrations';
 import {
   InstagramIllustration,
   TikTokIllustration,
@@ -186,6 +192,103 @@ export default function SettingsPage() {
   const handleTabChange = (tabId) => {
     setActiveTab(tabId);
     setSearchParams({ tab: tabId });
+  };
+
+  // Salesforce CRM State & Handlers
+  const [salesforceStatus, setSalesforceStatus] = useState({
+    loading: false,
+    connected: false,
+    orgId: null,
+    instanceUrl: null,
+    connectedAt: null,
+  });
+
+  const loadSalesforceStatus = async () => {
+    try {
+      setSalesforceStatus((s) => ({ ...s, loading: true }));
+      const data = await getSalesforceStatus();
+      if (data && data.success) {
+        setSalesforceStatus({
+          loading: false,
+          connected: !!data.connected,
+          orgId: data.orgId || null,
+          instanceUrl: data.instanceUrl || null,
+          connectedAt: data.connectedAt || null,
+        });
+      } else {
+        setSalesforceStatus((s) => ({ ...s, loading: false }));
+      }
+    } catch {
+      setSalesforceStatus((s) => ({ ...s, loading: false }));
+    }
+  };
+
+  useEffect(() => {
+    if (activeTab === 'integrations') {
+      loadSalesforceStatus();
+    }
+  }, [activeTab]);
+
+  const handleConnectSalesforce = async () => {
+    try {
+      toast.loading('Opening Salesforce authorization...', { id: 'sf-auth' });
+      const data = await getSalesforceConnectUrl();
+      if (!data?.oauthUrl) {
+        throw new Error(data?.error || 'Failed to generate Salesforce OAuth URL');
+      }
+
+      toast.dismiss('sf-auth');
+
+      const width = 640;
+      const height = 720;
+      const left = window.screen.width / 2 - width / 2;
+      const top = window.screen.height / 2 - height / 2;
+      window.open(
+        data.oauthUrl,
+        'SalesforceOAuth',
+        `toolbar=no,location=no,status=no,menubar=no,scrollbars=yes,resizable=yes,width=${width},height=${height},top=${top},left=${left}`
+      );
+
+      const messageHandler = (event) => {
+        if (event.data?.type === 'SALESFORCE_CONNECTED') {
+          window.removeEventListener('message', messageHandler);
+          setSalesforceStatus({
+            loading: false,
+            connected: true,
+            orgId: event.data.orgId,
+            instanceUrl: event.data.instanceUrl,
+            connectedAt: new Date().toISOString(),
+          });
+          toast.success('Salesforce CRM connected successfully! 🎉');
+        } else if (event.data?.type === 'SALESFORCE_AUTH_ERROR') {
+          window.removeEventListener('message', messageHandler);
+          toast.error(event.data.error || 'Salesforce authorization failed.');
+        }
+      };
+
+      window.addEventListener('message', messageHandler);
+    } catch (err) {
+      toast.dismiss('sf-auth');
+      toast.error(err.response?.data?.error || err.message || 'Failed to connect Salesforce');
+    }
+  };
+
+  const handleDisconnectSalesforce = async () => {
+    if (!window.confirm('Are you sure you want to disconnect Salesforce CRM? Synced records will remain intact in Salesforce.')) return;
+    try {
+      toast.loading('Disconnecting Salesforce CRM...', { id: 'sf-disc' });
+      await disconnectSalesforce();
+      setSalesforceStatus({
+        loading: false,
+        connected: false,
+        orgId: null,
+        instanceUrl: null,
+        connectedAt: null,
+      });
+      toast.success('Salesforce CRM disconnected.', { id: 'sf-disc' });
+    } catch (err) {
+      toast.error(err.response?.data?.error || err.message || 'Failed to disconnect Salesforce', { id: 'sf-disc' });
+    }
   };
 
   const handleOpenConnectModal = (channelId) => {
@@ -2408,6 +2511,103 @@ export default function SettingsPage() {
                     <a href="#learn" onClick={(e) => { e.preventDefault(); toast('Opening Kit guide'); }} className="text-[#0066ff] hover:underline cursor-pointer">
                       Learn more
                     </a>
+                  </div>
+                </div>
+              </div>
+
+              {/* Card 13: Salesforce CRM */}
+              <div className="bg-white rounded-xl border border-slate-200/90 shadow-2xs p-5 sm:p-6">
+                <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-start">
+                  <div className="md:col-span-3 flex items-center gap-1.5 flex-wrap">
+                    <span className="font-semibold text-slate-900 text-sm">Salesforce CRM</span>
+                    <span className="px-1 py-0.2 bg-[#00A1E0] text-white text-[9px] font-extrabold rounded">OAUTH 2.0</span>
+                    {salesforceStatus.connected && (
+                      <span className="px-1.5 py-0.5 bg-emerald-100 text-emerald-800 text-[10px] font-bold rounded-full flex items-center gap-1">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                        Connected
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="md:col-span-5 space-y-3">
+                    <div className="flex items-center gap-2.5">
+                      <SalesforceBrandIcon className="w-6 h-6 shrink-0" />
+                      <div>
+                        <span className="text-xs font-bold text-slate-900">Salesforce CRM</span>
+                        <div className="text-[11px] text-slate-500">Official OAuth 2.0 Connected App</div>
+                      </div>
+                    </div>
+
+                    {salesforceStatus.connected ? (
+                      <div className="space-y-3 bg-slate-50 border border-slate-200 rounded-lg p-3">
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="text-slate-500">Status:</span>
+                          <span className="font-semibold text-emerald-600 flex items-center gap-1">
+                            <Check className="w-3.5 h-3.5" /> Active & Synced
+                          </span>
+                        </div>
+                        {salesforceStatus.instanceUrl && (
+                          <div className="flex items-center justify-between text-xs">
+                            <span className="text-slate-500">Instance:</span>
+                            <span className="font-mono text-[11px] text-slate-700 truncate max-w-[200px]" title={salesforceStatus.instanceUrl}>
+                              {salesforceStatus.instanceUrl.replace(/^https?:\/\//, '')}
+                            </span>
+                          </div>
+                        )}
+                        {salesforceStatus.orgId && (
+                          <div className="flex items-center justify-between text-xs">
+                            <span className="text-slate-500">Org ID:</span>
+                            <span className="font-mono text-[11px] text-slate-700">
+                              {salesforceStatus.orgId}
+                            </span>
+                          </div>
+                        )}
+                        <div className="pt-2 border-t border-slate-200 flex gap-2">
+                          <button
+                            onClick={handleConnectSalesforce}
+                            className="flex-1 py-1.5 px-3 bg-white hover:bg-slate-100 border border-slate-300 text-slate-700 rounded-lg text-xs font-semibold transition-colors cursor-pointer shadow-2xs"
+                          >
+                            Re-authorize
+                          </button>
+                          <button
+                            onClick={handleDisconnectSalesforce}
+                            className="flex-1 py-1.5 px-3 bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-700 rounded-lg text-xs font-semibold transition-colors cursor-pointer"
+                          >
+                            Disconnect
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                        <div className="text-xs font-bold text-slate-800">Step 1</div>
+                        <div className="text-xs text-slate-500">
+                          Authorize OmniConnect to securely connect to your Salesforce CRM organization.
+                        </div>
+
+                        <button
+                          onClick={handleConnectSalesforce}
+                          disabled={salesforceStatus.loading}
+                          className="w-full py-2 px-4 bg-[#00A1E0] hover:bg-[#008bc2] text-white rounded-lg text-xs font-semibold transition-colors cursor-pointer shadow-2xs flex items-center justify-center gap-2"
+                        >
+                          <SalesforceBrandIcon className="w-4 h-4" />
+                          <span>{salesforceStatus.loading ? 'Checking...' : 'Connect Salesforce Account'}</span>
+                        </button>
+                      </>
+                    )}
+                  </div>
+
+                  <div className="md:col-span-4 text-xs text-slate-500 leading-relaxed space-y-2">
+                    <p>
+                      Automatically sync contacts, leads, and customer conversation activities directly into your Salesforce CRM.
+                    </p>
+                    <div className="bg-[#f0f9ff] border border-[#bae6fd] rounded-lg p-2.5 text-[11px] text-[#0369a1] space-y-1">
+                      <div className="font-bold flex items-center gap-1">
+                        <span>🔒 Enterprise Security</span>
+                      </div>
+                      <p>
+                        OAuth 2.0 Web Server Flow with AES-256-GCM encrypted tokens. Client secrets never leave the server.
+                      </p>
+                    </div>
                   </div>
                 </div>
               </div>
