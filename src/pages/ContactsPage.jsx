@@ -32,15 +32,150 @@ import { apiClient } from '../api/client';
 import toast from 'react-hot-toast';
 
 const COUNTRY_CODES = [
-  { code: 'US', dial: '+1', name: 'United States' },
-  { code: 'PK', dial: '+92', name: 'Pakistan' },
-  { code: 'GB', dial: '+44', name: 'United Kingdom' },
-  { code: 'IN', dial: '+91', name: 'India' },
-  { code: 'CA', dial: '+1', name: 'Canada' },
-  { code: 'AU', dial: '+61', name: 'Australia' },
-  { code: 'AE', dial: '+971', name: 'United Arab Emirates' },
-  { code: 'SA', dial: '+966', name: 'Saudi Arabia' },
+  { code: 'US', dial: '+1', name: 'United States', placeholder: '5417543010', example: '+15417543010' },
+  { code: 'PK', dial: '+92', name: 'Pakistan', placeholder: '03182023581', example: '+923182023581' },
+  { code: 'GB', dial: '+44', name: 'United Kingdom', placeholder: '7123456789', example: '+447123456789' },
+  { code: 'IN', dial: '+91', name: 'India', placeholder: '9876543210', example: '+919876543210' },
+  { code: 'CA', dial: '+1', name: 'Canada', placeholder: '5417543010', example: '+15417543010' },
+  { code: 'AU', dial: '+61', name: 'Australia', placeholder: '412345678', example: '+61412345678' },
+  { code: 'AE', dial: '+971', name: 'United Arab Emirates', placeholder: '501234567', example: '+971501234567' },
+  { code: 'SA', dial: '+966', name: 'Saudi Arabia', placeholder: '501234567', example: '+966501234567' },
 ];
+
+// Validation Helper: Email
+function validateEmailAddress(email) {
+  if (!email || !email.trim()) return { isValid: true, error: '' };
+  const trimmed = email.trim();
+  const re = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+  if (!re.test(trimmed)) {
+    return {
+      isValid: false,
+      error: 'Please enter a valid email address. For example: name@example.com',
+    };
+  }
+  return { isValid: true, error: '' };
+}
+
+// Validation Helper: Country-Specific Phone
+function validatePhoneNumberByCountry(phone, country) {
+  if (!phone || !phone.trim()) return { isValid: true, error: '' };
+
+  const raw = phone.trim();
+  const cleaned = raw.replace(/[\s\-\(\)]/g, '');
+  const digitsOnly = cleaned.replace(/\D/g, '');
+
+  switch (country.code) {
+    case 'US':
+    case 'CA': {
+      if (cleaned.startsWith('+1')) {
+        const local = cleaned.slice(2);
+        if (/^[2-9]\d{2}[2-9]\d{6}$/.test(local)) return { isValid: true, error: '' };
+      } else if (digitsOnly.length === 11 && digitsOnly.startsWith('1')) {
+        const local = digitsOnly.slice(1);
+        if (/^[2-9]\d{2}[2-9]\d{6}$/.test(local)) return { isValid: true, error: '' };
+      } else if (digitsOnly.length === 10 && /^[2-9]\d{2}[2-9]\d{6}$/.test(digitsOnly)) {
+        return { isValid: true, error: '' };
+      }
+      return {
+        isValid: false,
+        error: 'The phone number has an incorrect format. Please enter the full 10 digit number in international format with the country code including "+". For example: +15417543010',
+      };
+    }
+    case 'PK': {
+      let local = digitsOnly;
+      if (cleaned.startsWith('+92')) local = cleaned.slice(3);
+      else if (local.startsWith('92') && local.length === 12) local = local.slice(2);
+      else if (local.startsWith('0')) local = local.slice(1);
+
+      if (/^3\d{9}$/.test(local)) {
+        return { isValid: true, error: '' };
+      }
+      return {
+        isValid: false,
+        error: 'The phone number has an incorrect format. Please enter a valid 10-digit Pakistan mobile number starting with 03 or 3. For example: 03182023581 or +923182023581',
+      };
+    }
+    case 'IN': {
+      let local = digitsOnly;
+      if (cleaned.startsWith('+91')) local = cleaned.slice(3);
+      else if (local.startsWith('91') && local.length === 12) local = local.slice(2);
+      else if (local.startsWith('0')) local = local.slice(1);
+
+      if (/^[6-9]\d{9}$/.test(local)) {
+        return { isValid: true, error: '' };
+      }
+      return {
+        isValid: false,
+        error: 'The phone number has an incorrect format. Please enter a valid 10-digit Indian mobile number starting with 6-9. For example: 9876543210 or +919876543210',
+      };
+    }
+    case 'GB': {
+      let local = digitsOnly;
+      if (cleaned.startsWith('+44')) local = cleaned.slice(3);
+      else if (local.startsWith('44') && local.length === 12) local = local.slice(2);
+      else if (local.startsWith('0')) local = local.slice(1);
+
+      if (/^7\d{9}$/.test(local) || /^\d{10}$/.test(local)) {
+        return { isValid: true, error: '' };
+      }
+      return {
+        isValid: false,
+        error: 'The phone number has an incorrect format. Please enter a valid UK number. For example: 7123456789 or +447123456789',
+      };
+    }
+    case 'AE':
+    case 'SA': {
+      let local = digitsOnly;
+      if (cleaned.startsWith('+971') || cleaned.startsWith('+966')) local = cleaned.slice(4);
+      else if (local.startsWith('0')) local = local.slice(1);
+
+      if (/^5\d{8}$/.test(local)) {
+        return { isValid: true, error: '' };
+      }
+      return {
+        isValid: false,
+        error: `The phone number has an incorrect format. Please enter a valid 9-digit ${country.name} number starting with 5. For example: 501234567`,
+      };
+    }
+    case 'AU': {
+      let local = digitsOnly;
+      if (cleaned.startsWith('+61')) local = cleaned.slice(3);
+      else if (local.startsWith('0')) local = local.slice(1);
+
+      if (/^4\d{8}$/.test(local)) {
+        return { isValid: true, error: '' };
+      }
+      return {
+        isValid: false,
+        error: 'The phone number has an incorrect format. Please enter a valid 9-digit Australian mobile number. For example: 412345678',
+      };
+    }
+    default: {
+      if (digitsOnly.length >= 7 && digitsOnly.length <= 15) {
+        return { isValid: true, error: '' };
+      }
+      return {
+        isValid: false,
+        error: 'The phone number has an incorrect format. Please enter a valid international phone number (7-15 digits).',
+      };
+    }
+  }
+}
+
+// Formatter to E.164 standard
+function formatPhoneToE164(phone, country) {
+  if (!phone || !phone.trim()) return '';
+  const cleaned = phone.trim().replace(/[\s\-\(\)]/g, '');
+  if (cleaned.startsWith('+')) return cleaned;
+  let local = cleaned.replace(/\D/g, '');
+  if (country.code === 'PK' && local.startsWith('92') && local.length === 12) {
+    return `+${local}`;
+  }
+  if (local.startsWith('0')) {
+    local = local.slice(1);
+  }
+  return `${country.dial}${local}`;
+}
 
 const INITIAL_CONTACTS = [];
 
@@ -80,7 +215,54 @@ export default function ContactsPage() {
   const [newEmail, setNewEmail] = useState('');
   const [newGender, setNewGender] = useState('Male');
   const [consentChecked, setConsentChecked] = useState(true);
-  const [phoneError, setPhoneError] = useState(false);
+  const [phoneError, setPhoneError] = useState('');
+  const [emailError, setEmailError] = useState('');
+  const [generalError, setGeneralError] = useState('');
+
+  // Handle Country Change with immediate phone re-validation
+  const handleCountryChange = (countryCode) => {
+    const found = COUNTRY_CODES.find((c) => c.code === countryCode);
+    if (found) {
+      setNewCountry(found);
+      if (newPhone.trim()) {
+        const check = validatePhoneNumberByCountry(newPhone, found);
+        setPhoneError(check.isValid ? '' : check.error);
+      } else {
+        setPhoneError('');
+      }
+    }
+  };
+
+  // Handle Phone input with auto-detection & live validation
+  const handlePhoneInputChange = (val) => {
+    setNewPhone(val);
+    setGeneralError('');
+
+    // Auto-detect country if user starts typing '+'
+    if (val.startsWith('+')) {
+      for (const c of COUNTRY_CODES) {
+        if (val.startsWith(c.dial)) {
+          setNewCountry(c);
+          break;
+        }
+      }
+    }
+
+    if (phoneError) {
+      const check = validatePhoneNumberByCountry(val, newCountry);
+      if (check.isValid) setPhoneError('');
+    }
+  };
+
+  // Handle Email input with live validation
+  const handleEmailInputChange = (val) => {
+    setNewEmail(val);
+    setGeneralError('');
+    if (emailError) {
+      const check = validateEmailAddress(val);
+      if (check.isValid) setEmailError('');
+    }
+  };
 
   // New Tag input inside Contact Details Drawer
   const [addingTag, setAddingTag] = useState(false);
@@ -210,26 +392,51 @@ export default function ContactsPage() {
     }
   };
 
-  // Create Contact Handler (Matching Screenshot 1)
+  // Create Contact Handler with Country & Email Validation
   const handleCreateContact = (e) => {
     e.preventDefault();
 
-    if (!newEmail.trim() && !newPhone.trim()) {
-      toast.error('To add a contact, you need to add an email or a phone number.');
+    setPhoneError('');
+    setEmailError('');
+    setGeneralError('');
+
+    const hasEmail = Boolean(newEmail.trim());
+    const hasPhone = Boolean(newPhone.trim());
+
+    if (!hasEmail && !hasPhone) {
+      const msg = 'To add a contact, you need to add an email or a phone number.';
+      setGeneralError(msg);
+      toast.error(msg);
       return;
     }
 
-    // Phone validation
-    const digitsOnly = newPhone.replace(/\D/g, '');
-    if (newPhone.trim() && digitsOnly.length < 7) {
-      setPhoneError(true);
+    let hasValidationError = false;
+
+    // Validate Phone according to selected country
+    if (hasPhone) {
+      const phoneValidation = validatePhoneNumberByCountry(newPhone, newCountry);
+      if (!phoneValidation.isValid) {
+        setPhoneError(phoneValidation.error);
+        hasValidationError = true;
+      }
+    }
+
+    // Validate Email address format
+    if (hasEmail) {
+      const emailValidation = validateEmailAddress(newEmail);
+      if (!emailValidation.isValid) {
+        setEmailError(emailValidation.error);
+        hasValidationError = true;
+      }
+    }
+
+    if (hasValidationError) {
       return;
     }
-    setPhoneError(false);
 
-    const formattedPhone = newPhone.trim()
-      ? `${newCountry.dial}${newPhone.trim().replace(/^0+/, '')}`
-      : '+9203182023581';
+    const formattedPhone = hasPhone
+      ? formatPhoneToE164(newPhone, newCountry)
+      : '';
 
     const newContact = {
       id: String(Math.floor(1000000000 + Math.random() * 9000000000)),
@@ -238,9 +445,9 @@ export default function ContactsPage() {
       name: `${newFirstName.trim()} ${newLastName.trim()}`.trim() || 'New Contact',
       gender: newGender,
       channel: 'whatsapp',
-      identifier: formattedPhone,
+      identifier: formattedPhone || newEmail.trim(),
       phone: formattedPhone,
-      email: newEmail.trim() || 'contact@example.com',
+      email: newEmail.trim(),
       subscribed: 'Just now',
       status: 'Subscribed',
       automationsPaused: false,
@@ -259,10 +466,12 @@ export default function ContactsPage() {
     setNewPhone('');
     setNewEmail('');
     setNewGender('Male');
-    setPhoneError(false);
+    setPhoneError('');
+    setEmailError('');
+    setGeneralError('');
 
     toast.success(`Contact ${newContact.name} created!`);
-    // Open drawer for the newly created contact
+    // Open drawer/modal for the newly created contact
     setSelectedContact(newContact);
   };
 
@@ -625,10 +834,15 @@ export default function ContactsPage() {
             </div>
 
             {/* Modal Subtitle */}
-            <div className="px-6 pb-4">
+            <div className="px-6 pb-3">
               <p className="text-xs text-slate-500">
                 To add a contact, you need to add an email or a phone number.
               </p>
+              {generalError && (
+                <div className="mt-2 p-2.5 bg-red-50 border border-red-200 text-red-600 rounded-lg text-xs font-medium animate-fade-in">
+                  {generalError}
+                </div>
+              )}
             </div>
 
             {/* Modal Form */}
@@ -672,10 +886,7 @@ export default function ContactsPage() {
                   <div className="relative">
                     <select
                       value={newCountry.code}
-                      onChange={(e) => {
-                        const found = COUNTRY_CODES.find((c) => c.code === e.target.value);
-                        if (found) setNewCountry(found);
-                      }}
+                      onChange={(e) => handleCountryChange(e.target.value)}
                       className="h-10 px-3 bg-white border border-slate-300 rounded-lg text-xs font-semibold text-slate-700 appearance-none pr-7 cursor-pointer focus:outline-none focus:border-blue-500"
                     >
                       {COUNTRY_CODES.map((c) => (
@@ -688,7 +899,7 @@ export default function ContactsPage() {
                   </div>
 
                   {/* Dial Code Prefix Box */}
-                  <div className="h-10 px-3 bg-slate-50 border border-slate-300 rounded-lg text-xs font-semibold text-slate-600 flex items-center justify-center">
+                  <div className="h-10 px-3 bg-slate-50 border border-slate-300 rounded-lg text-xs font-semibold text-slate-600 flex items-center justify-center font-mono">
                     {newCountry.dial}
                   </div>
 
@@ -696,23 +907,20 @@ export default function ContactsPage() {
                   <input
                     type="text"
                     value={newPhone}
-                    onChange={(e) => {
-                      setNewPhone(e.target.value);
-                      if (phoneError) setPhoneError(false);
-                    }}
-                    placeholder="03182023581"
+                    onChange={(e) => handlePhoneInputChange(e.target.value)}
+                    placeholder={newCountry.placeholder || '03182023581'}
                     className={`flex-1 px-3.5 py-2 bg-white border rounded-lg text-sm text-slate-800 focus:outline-none ${
                       phoneError
-                        ? 'border-red-500 focus:border-red-500'
-                        : 'border-slate-300 focus:border-blue-500'
+                        ? 'border-red-500 focus:border-red-500 focus:ring-1 focus:ring-red-500'
+                        : 'border-slate-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500'
                     }`}
                   />
                 </div>
 
-                {/* Validation Error Message matching Screenshot 1 */}
+                {/* Country-specific Validation Error Message matching Screenshot 1 */}
                 {phoneError && (
                   <p className="text-[11px] text-red-500 mt-1.5 leading-snug">
-                    The phone number has an incorrect format. Please enter the full 10 digit number in international format with the country code including &ldquo;+&rdquo;. For example: +15417543010
+                    {phoneError}
                   </p>
                 )}
               </div>
@@ -725,10 +933,20 @@ export default function ContactsPage() {
                 <input
                   type="email"
                   value={newEmail}
-                  onChange={(e) => setNewEmail(e.target.value)}
+                  onChange={(e) => handleEmailInputChange(e.target.value)}
                   placeholder="javedabuzar969@gmail.com"
-                  className="w-full px-3.5 py-2 bg-white border border-slate-300 rounded-lg text-sm text-slate-800 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                  className={`w-full px-3.5 py-2 bg-white border rounded-lg text-sm text-slate-800 focus:outline-none ${
+                    emailError
+                      ? 'border-red-500 focus:border-red-500 focus:ring-1 focus:ring-red-500'
+                      : 'border-slate-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500'
+                  }`}
                 />
+                {/* Email Validation Error Message */}
+                {emailError && (
+                  <p className="text-[11px] text-red-500 mt-1.5 leading-snug">
+                    {emailError}
+                  </p>
+                )}
               </div>
 
               {/* Gender */}
