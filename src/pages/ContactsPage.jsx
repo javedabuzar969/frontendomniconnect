@@ -177,23 +177,12 @@ function formatPhoneToE164(phone, country) {
   return `${country.dial}${local}`;
 }
 
-const INITIAL_CONTACTS = [];
-
 export default function ContactsPage() {
   const navigate = useNavigate();
 
-  // Contacts state starts completely empty
-  const [contacts, setContacts] = useState(() => {
-    try {
-      localStorage.removeItem('omniconnect_contacts');
-      const saved = localStorage.getItem('omniconnect_contacts_v2');
-      if (saved) return JSON.parse(saved);
-    } catch (e) {
-      console.warn(e);
-    }
-    return [];
-  });
-
+  // Contacts state — loaded from backend API
+  const [contacts, setContacts] = useState([]);
+  const [apiLoading, setApiLoading] = useState(true);
   const [loading, setLoading] = useState(false);
   const [query, setQuery] = useState('');
   const [channelFilter, setChannelFilter] = useState('all');
@@ -268,6 +257,38 @@ export default function ContactsPage() {
   const [addingTag, setAddingTag] = useState(false);
   const [newTagInput, setNewTagInput] = useState('');
 
+  // ─── Fetch contacts from backend on mount ───────────────────────────────────
+  useEffect(() => {
+    let cancelled = false;
+    setApiLoading(true);
+    apiClient.get('/api/contacts?limit=500')
+      .then((res) => {
+        if (!cancelled) {
+          const data = res.data?.contacts || res.data || [];
+          setContacts(Array.isArray(data) ? data : []);
+        }
+      })
+      .catch((err) => {
+        console.warn('[ContactsPage] API fetch failed, using localStorage fallback:', err.message);
+        // Graceful fallback to localStorage if backend is unreachable
+        try {
+          const saved = localStorage.getItem('omniconnect_contacts_v2');
+          if (saved && !cancelled) setContacts(JSON.parse(saved));
+        } catch {}
+      })
+      .finally(() => { if (!cancelled) setApiLoading(false); });
+    return () => { cancelled = true; };
+  }, []);
+
+  // Sync to localStorage as backup cache
+  useEffect(() => {
+    try {
+      localStorage.setItem('omniconnect_contacts_v2', JSON.stringify(contacts));
+    } catch (e) {
+      console.warn(e);
+    }
+  }, [contacts]);
+
   // Close bulk menu when clicking outside
   useEffect(() => {
     function handleClickOutside(event) {
@@ -278,15 +299,6 @@ export default function ContactsPage() {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
-
-  // Sync to localStorage
-  useEffect(() => {
-    try {
-      localStorage.setItem('omniconnect_contacts_v2', JSON.stringify(contacts));
-    } catch (e) {
-      console.warn(e);
-    }
-  }, [contacts]);
 
   // Filtered contacts
   const filtered = contacts.filter((c) => {
@@ -328,6 +340,7 @@ export default function ContactsPage() {
     if (action === 'Add Tag') {
       const tag = window.prompt('Enter tag name to add to selected contacts:');
       if (tag && tag.trim()) {
+        // Optimistic update
         setContacts((prev) =>
           prev.map((c) =>
             selectedIds.includes(c.id)
@@ -336,6 +349,9 @@ export default function ContactsPage() {
           )
         );
         toast.success(`Tag "${tag.trim()}" added to ${selectedIds.length} contact(s)`);
+        // Backend sync
+        apiClient.post('/api/contacts/bulk', { ids: selectedIds, action: 'addTag', payload: { tag: tag.trim() } })
+          .catch((err) => console.warn('[bulk addTag]', err.message));
       }
     } else if (action === 'Remove Tag') {
       const tag = window.prompt('Enter tag name to remove from selected contacts:');
@@ -348,6 +364,8 @@ export default function ContactsPage() {
           )
         );
         toast.success(`Tag "${tag.trim()}" removed from ${selectedIds.length} contact(s)`);
+        apiClient.post('/api/contacts/bulk', { ids: selectedIds, action: 'removeTag', payload: { tag: tag.trim() } })
+          .catch((err) => console.warn('[bulk removeTag]', err.message));
       }
     } else if (action === 'Subscribe to Sequence') {
       const seq = window.prompt('Enter sequence name:', 'Welcome Sequence');
@@ -360,6 +378,8 @@ export default function ContactsPage() {
           )
         );
         toast.success(`Subscribed ${selectedIds.length} contact(s) to "${seq.trim()}"`);
+        apiClient.post('/api/contacts/bulk', { ids: selectedIds, action: 'subscribeSequence', payload: { sequence: seq.trim() } })
+          .catch((err) => console.warn('[bulk subscribeSeq]', err.message));
       }
     } else if (action === 'Unsubscribe from Sequence') {
       setContacts((prev) =>
@@ -368,6 +388,8 @@ export default function ContactsPage() {
         )
       );
       toast.success(`Unsubscribed ${selectedIds.length} contact(s) from sequences`);
+      apiClient.post('/api/contacts/bulk', { ids: selectedIds, action: 'unsubscribeSequence' })
+        .catch((err) => console.warn('[bulk unsubSeq]', err.message));
     } else if (action === 'Pause Automations Forever') {
       setContacts((prev) =>
         prev.map((c) =>
@@ -375,6 +397,8 @@ export default function ContactsPage() {
         )
       );
       toast.success(`Paused automations for ${selectedIds.length} contact(s)`);
+      apiClient.post('/api/contacts/bulk', { ids: selectedIds, action: 'pauseAutomations' })
+        .catch((err) => console.warn('[bulk pause]', err.message));
     } else if (action === 'Resume Automations') {
       setContacts((prev) =>
         prev.map((c) =>
@@ -382,6 +406,8 @@ export default function ContactsPage() {
         )
       );
       toast.success(`Resumed automations for ${selectedIds.length} contact(s)`);
+      apiClient.post('/api/contacts/bulk', { ids: selectedIds, action: 'resumeAutomations' })
+        .catch((err) => console.warn('[bulk resume]', err.message));
     } else if (action === 'Set User Field') {
       const fieldVal = window.prompt('Enter field value (e.g., VIP Lead):');
       if (fieldVal) {
@@ -438,76 +464,94 @@ export default function ContactsPage() {
       ? formatPhoneToE164(newPhone, newCountry)
       : '';
 
-    const newContact = {
-      id: String(Math.floor(1000000000 + Math.random() * 9000000000)),
+    // ─── POST to backend API ───────────────────────────────────────────────────
+    setLoading(true);
+    apiClient.post('/api/contacts', {
       firstName: newFirstName.trim() || 'New',
       lastName: newLastName.trim() || 'Contact',
-      name: `${newFirstName.trim()} ${newLastName.trim()}`.trim() || 'New Contact',
-      gender: newGender,
-      channel: 'whatsapp',
-      identifier: formattedPhone || newEmail.trim(),
       phone: formattedPhone,
       email: newEmail.trim(),
-      subscribed: 'Just now',
-      status: 'Subscribed',
-      automationsPaused: false,
+      gender: newGender,
+      channel: 'whatsapp',
       tags: ['New Lead'],
-      sequences: [],
       optedInThrough: 'Manually',
-      contactTime: 'Unknown',
-    };
-
-    setContacts([newContact, ...contacts]);
-    setCreateModalOpen(false);
-
-    // Reset form
-    setNewFirstName('');
-    setNewLastName('');
-    setNewPhone('');
-    setNewEmail('');
-    setNewGender('Male');
-    setPhoneError('');
-    setEmailError('');
-    setGeneralError('');
-
-    toast.success(`Contact ${newContact.name} created!`);
-    // Open drawer/modal for the newly created contact
-    setSelectedContact(newContact);
+    })
+      .then((res) => {
+        const created = res.data;
+        setContacts((prev) => [created, ...prev]);
+        setCreateModalOpen(false);
+        // Reset form
+        setNewFirstName('');
+        setNewLastName('');
+        setNewPhone('');
+        setNewEmail('');
+        setNewGender('Male');
+        setPhoneError('');
+        setEmailError('');
+        setGeneralError('');
+        toast.success(`Contact ${created.name} created!`);
+        setSelectedContact(created);
+      })
+      .catch((err) => {
+        const msg = err.response?.data?.error || 'Failed to create contact. Please try again.';
+        if (msg.includes('already exists')) {
+          setGeneralError(msg);
+        } else {
+          setGeneralError(msg);
+        }
+        toast.error(msg);
+      })
+      .finally(() => setLoading(false));
   };
 
   // Toggle Automations for specific contact
   const handleToggleAutomations = (contactId) => {
+    const contact = contacts.find((c) => c.id === contactId);
+    if (!contact) return;
+    const newPaused = !contact.automationsPaused;
+
+    // Optimistic UI update
     setContacts((prev) =>
       prev.map((c) => {
         if (c.id === contactId) {
-          const updated = { ...c, automationsPaused: !c.automationsPaused };
-          if (selectedContact && selectedContact.id === contactId) {
-            setSelectedContact(updated);
-          }
+          const updated = { ...c, automationsPaused: newPaused };
+          if (selectedContact && selectedContact.id === contactId) setSelectedContact(updated);
           return updated;
         }
         return c;
       })
     );
-    toast.success('Automations status updated');
+    toast.success(newPaused ? 'Automations paused' : 'Automations resumed');
+
+    // Sync to backend
+    apiClient.patch(`/api/contacts/${contactId}`, { automationsPaused: newPaused }).catch((err) => {
+      console.warn('[ContactsPage] patch automations failed:', err.message);
+    });
   };
 
   // Toggle Subscribed Status
   const handleToggleSubscribed = (contactId) => {
+    const contact = contacts.find((c) => c.id === contactId);
+    if (!contact) return;
+    const nextStatus = contact.status === 'Subscribed' ? 'Unsubscribed' : 'Subscribed';
+
+    // Optimistic UI update
     setContacts((prev) =>
       prev.map((c) => {
         if (c.id === contactId) {
-          const nextStatus = c.status === 'Subscribed' ? 'Unsubscribed' : 'Subscribed';
           const updated = { ...c, status: nextStatus };
-          if (selectedContact && selectedContact.id === contactId) {
-            setSelectedContact(updated);
-          }
+          if (selectedContact && selectedContact.id === contactId) setSelectedContact(updated);
           return updated;
         }
         return c;
       })
     );
     toast.success('Subscription status updated');
+
+    // Sync to backend
+    apiClient.patch(`/api/contacts/${contactId}`, { status: nextStatus }).catch((err) => {
+      console.warn('[ContactsPage] patch status failed:', err.message);
+    });
   };
 
   // Add Tag in Drawer
@@ -516,6 +560,7 @@ export default function ContactsPage() {
     const tag = newTagInput.trim();
     const updatedTags = Array.from(new Set([...(selectedContact.tags || []), tag]));
 
+    // Optimistic update
     setContacts((prev) =>
       prev.map((c) => (c.id === selectedContact.id ? { ...c, tags: updatedTags } : c))
     );
@@ -523,6 +568,11 @@ export default function ContactsPage() {
     setNewTagInput('');
     setAddingTag(false);
     toast.success(`Tag "${tag}" added`);
+
+    // Sync to backend
+    apiClient.patch(`/api/contacts/${selectedContact.id}`, { tags: updatedTags }).catch((err) => {
+      console.warn('[ContactsPage] patch tags failed:', err.message);
+    });
   };
 
   // Remove Tag in Drawer
@@ -530,11 +580,17 @@ export default function ContactsPage() {
     if (!selectedContact) return;
     const updatedTags = (selectedContact.tags || []).filter((t) => t !== tagToRemove);
 
+    // Optimistic update
     setContacts((prev) =>
       prev.map((c) => (c.id === selectedContact.id ? { ...c, tags: updatedTags } : c))
     );
     setSelectedContact({ ...selectedContact, tags: updatedTags });
     toast.success(`Tag "${tagToRemove}" removed`);
+
+    // Sync to backend
+    apiClient.patch(`/api/contacts/${selectedContact.id}`, { tags: updatedTags }).catch((err) => {
+      console.warn('[ContactsPage] patch tags failed:', err.message);
+    });
   };
 
   const isAllSelected = filtered.length > 0 && selectedIds.length === filtered.length;
@@ -782,6 +838,12 @@ export default function ContactsPage() {
                     {filtered.length === 0 && (
                       <tr>
                         <td colSpan={7} className="py-20 text-center">
+                          {apiLoading ? (
+                            <div className="flex flex-col items-center justify-center gap-3">
+                              <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+                              <span className="text-xs text-slate-400 font-medium">Loading contacts…</span>
+                            </div>
+                          ) : (
                           <div className="flex flex-col items-center justify-center max-w-sm mx-auto">
                             <div className="w-14 h-14 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 mb-3 border border-slate-200">
                               <User size={26} className="text-slate-400" />
@@ -798,6 +860,7 @@ export default function ContactsPage() {
                               <span>Create New Contact</span>
                             </button>
                           </div>
+                          )}
                         </td>
                       </tr>
                     )}
@@ -994,10 +1057,11 @@ export default function ContactsPage() {
                 </button>
                 <button
                   type="submit"
-                  disabled={!consentChecked}
-                  className="px-6 py-2 bg-[#0066ff] hover:bg-blue-700 text-white font-semibold rounded-lg text-xs transition-colors cursor-pointer shadow-xs disabled:opacity-50 disabled:cursor-not-allowed"
+                  disabled={!consentChecked || loading}
+                  className="px-6 py-2 bg-[#0066ff] hover:bg-blue-700 text-white font-semibold rounded-lg text-xs transition-colors cursor-pointer shadow-xs disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                 >
-                  Create
+                  {loading && <span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin inline-block" />}
+                  {loading ? 'Creating…' : 'Create'}
                 </button>
               </div>
             </form>
