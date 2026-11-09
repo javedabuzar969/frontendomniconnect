@@ -4,8 +4,6 @@ import {
   Search,
   Filter,
   Plus,
-  Download,
-  Upload,
   MoreHorizontal,
   Tag,
   Mail,
@@ -102,20 +100,6 @@ export default function ContactsPage() {
         </div>
 
         <div className="flex items-center gap-2 sm:gap-3 flex-wrap w-full sm:w-auto">
-          <button
-            onClick={() => toast.success('Exporting contacts to CSV')}
-            className="flex-1 sm:flex-initial px-3 sm:px-4 py-2 sm:py-2.5 bg-white border border-slate-200/90 hover:bg-slate-50 text-slate-700 rounded-xl flex items-center justify-center gap-1.5 sm:gap-2 font-semibold text-xs sm:text-sm shadow-2xs hover:shadow-xs transition-all cursor-pointer whitespace-nowrap"
-          >
-            <Download size={14} />
-            <span>Export</span>
-          </button>
-          <button
-            onClick={() => toast('Import contacts wizard opened')}
-            className="flex-1 sm:flex-initial px-3 sm:px-4 py-2 sm:py-2.5 bg-white border border-slate-200/90 hover:bg-slate-50 text-slate-700 rounded-xl flex items-center justify-center gap-1.5 sm:gap-2 font-semibold text-xs sm:text-sm shadow-2xs hover:shadow-xs transition-all cursor-pointer whitespace-nowrap"
-          >
-            <Upload size={14} />
-            <span>Import</span>
-          </button>
           <button
             onClick={() => setNewContactModal(true)}
             className="w-full xs:w-auto sm:flex-initial px-3.5 sm:px-5 py-2 sm:py-2.5 bg-[#007aff] hover:bg-[#0069db] text-white rounded-xl flex items-center justify-center gap-1.5 sm:gap-2 font-semibold text-xs sm:text-sm shadow-xs transition-colors cursor-pointer whitespace-nowrap"
