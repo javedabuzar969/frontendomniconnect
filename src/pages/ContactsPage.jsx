@@ -428,40 +428,9 @@ export default function ContactsPage() {
         </div>
       </div>
 
-      {/* Main Content Area with Side Panels matching Screenshot 3 */}
+      {/* Main Content Area */}
       <div className="w-full max-w-[1400px] px-4 sm:px-8 lg:px-12 py-6">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          
-          {/* Left Column: Segments & Subscription Lists (Matching Screenshot 3) */}
-          <div className="lg:col-span-3 space-y-6">
-            {/* Segments Box */}
-            <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-2xs">
-              <div className="flex items-center justify-between mb-2">
-                <span className="font-bold text-slate-900 text-sm">Segments</span>
-                <span className="px-2 py-0.5 bg-[#0066ff] text-white text-[10px] font-extrabold rounded tracking-wider">
-                  UPGRADE
-                </span>
-              </div>
-              <p className="text-xs text-slate-500 leading-relaxed">
-                Apply filter(s) to your contacts to create your first Segment
-              </p>
-            </div>
-
-            {/* Subscription Lists Box */}
-            <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-2xs space-y-3">
-              <div className="flex items-center justify-between text-xs text-slate-400 font-semibold uppercase tracking-wider">
-                <span>Subscription Lists</span>
-                <span>Contacts</span>
-              </div>
-              <div className="flex items-center justify-between text-sm py-1 border-t border-slate-100">
-                <span className="text-slate-700 font-medium text-xs">Promo & Updates</span>
-                <span className="text-slate-400 text-xs font-semibold">0</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Right Column: Contacts Table & Bulk Actions (Matching Screenshot 3) */}
-          <div className="lg:col-span-9 space-y-4">
+        <div className="space-y-4">
             
             {/* Toolbar: Filter, Search, Bulk Actions */}
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-white p-3 border border-slate-200 rounded-xl shadow-2xs">
@@ -699,7 +668,6 @@ export default function ContactsPage() {
               </div>
             </div>
 
-          </div>
         </div>
       </div>
 
