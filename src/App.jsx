@@ -81,6 +81,15 @@ export default function App() {
         }
       />
 
+      <Route
+        path="/connect-facebook"
+        element={
+          <ProtectedRoute>
+            <ConnectFacebookPage />
+          </ProtectedRoute>
+        }
+      />
+
       {/* Protected: All app pages require login */}
       <Route
         element={
@@ -94,7 +103,6 @@ export default function App() {
         <Route path="/inbox" element={<InboxPage />} />
         <Route path="/broadcasts" element={<BroadcastsPage />} />
         <Route path="/settings" element={<SettingsPage />} />
-        <Route path="/connect-facebook" element={<ConnectFacebookPage />} />
         <Route path="/connect-instagram" element={<ConnectInstagramPage />} />
 
         {/* Redirects */}

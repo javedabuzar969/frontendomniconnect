@@ -2,7 +2,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import ConnectChannelModal from '../components/ui/ConnectChannelModal';
-import ConnectFacebookPageModal from '../components/integrations/ConnectFacebookPageModal';
 import ConnectInstagramModal from '../components/integrations/ConnectInstagramModal';
 import ConnectViaMetaModal from '../components/integrations/ConnectViaMetaModal';
 import ProUpgradeModal from '../components/ui/ProUpgradeModal';
@@ -65,9 +64,6 @@ export default function InboxPage() {
   const [showConnectModal, setShowConnectModal] = useState(() => {
     return searchParams.get('connectChannel') === 'true';
   });
-  const [showConnectFacebookModal, setShowConnectFacebookModal] = useState(() => {
-    return searchParams.get('channel') === 'facebook';
-  });
   const [showConnectInstagramModal, setShowConnectInstagramModal] = useState(() => {
     return searchParams.get('channel') === 'instagram';
   });
@@ -85,12 +81,12 @@ export default function InboxPage() {
       setShowConnectModal(true);
     }
     if (searchParams.get('channel') === 'facebook') {
-      setShowConnectFacebookModal(true);
+      navigate('/connect-facebook');
     }
     if (searchParams.get('proTrial') === 'true') {
       setShowProModal(true);
     }
-  }, [searchParams]);
+  }, [searchParams, navigate]);
 
   // Keep a ref of conversations for comparison without depending on state
   const convsRef = useRef([]);
@@ -962,7 +958,7 @@ export default function InboxPage() {
         onConnect={(ch) => {
           handleCloseModal();
           if (ch.id === 'facebook') {
-            setShowConnectFacebookModal(true);
+            navigate('/connect-facebook');
           } else if (ch.id === 'instagram') {
             setShowConnectInstagramModal(true);
           } else if (ch.id === 'whatsapp') {
@@ -999,21 +995,6 @@ export default function InboxPage() {
         onSuccess={async () => {
           await loadConversations();
           toast.success(`🎉 ${metaChannelName} connected via Meta!`);
-        }}
-      />
-
-      {/* Connect Facebook Page Modal (Manychat Style matching Image 2) */}
-      <ConnectFacebookPageModal
-        isOpen={showConnectFacebookModal}
-        onClose={() => setShowConnectFacebookModal(false)}
-        onBack={() => {
-          setShowConnectFacebookModal(false);
-          setShowConnectModal(true);
-        }}
-        onPageConnected={async (page) => {
-          setShowConnectFacebookModal(false);
-          await loadConversations();
-          toast.success(`🎉 ${page.name} connected to Inbox!`);
         }}
       />
 

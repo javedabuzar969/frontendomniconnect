@@ -1,5 +1,5 @@
 // pages/ConnectFacebookPage.jsx
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ChevronLeft, RefreshCw, HelpCircle } from 'lucide-react';
 import { MessengerIllustration } from '../components/ui/ChannelIllustrations';

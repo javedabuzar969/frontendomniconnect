@@ -1,6 +1,6 @@
 // pages/SettingsPage.jsx — Exact match to Manychat Settings Screenshots
 import React, { useState, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import {
   X,
   Check,
@@ -42,7 +42,6 @@ import {
   TemplatesRabbitIllustration,
 } from '../components/ui/ChannelIllustrations';
 import ConnectInstagramModal from '../components/integrations/ConnectInstagramModal';
-import ConnectFacebookPageModal from '../components/integrations/ConnectFacebookPageModal';
 import toast from 'react-hot-toast';
 
 function Switch({ checked, onChange, label }) {
@@ -63,6 +62,7 @@ function Switch({ checked, onChange, label }) {
 }
 
 export default function SettingsPage() {
+  const navigate = useNavigate();
   const { user } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
   const initialTab = searchParams.get('tab') || 'notifications';
@@ -167,7 +167,6 @@ export default function SettingsPage() {
   const [groupName, setGroupName] = useState('');
   const [connectModal, setConnectModal] = useState({ open: false, channelId: null, accountInput: '' });
   const [showInstagramModal, setShowInstagramModal] = useState(false);
-  const [showFacebookModal, setShowFacebookModal] = useState(false);
   const [fbTurnedOffDismissed, setFbTurnedOffDismissed] = useState(false);
 
   // Channel Connection States (for all 7 channels)
@@ -3133,20 +3132,6 @@ export default function SettingsPage() {
           }));
           setShowInstagramModal(false);
           toast.success('🎉 Instagram connected successfully!');
-        }}
-      />
-
-      {/* Facebook Page Connection Modal */}
-      <ConnectFacebookPageModal
-        isOpen={showFacebookModal}
-        onClose={() => setShowFacebookModal(false)}
-        onPageConnected={(page) => {
-          setChannelStatus((prev) => ({
-            ...prev,
-            messenger: { ...prev.messenger, connected: true, account: page.name },
-          }));
-          setShowFacebookModal(false);
-          toast.success(`🎉 ${page.name} connected to Facebook Messenger!`);
         }}
       />
     </div>
