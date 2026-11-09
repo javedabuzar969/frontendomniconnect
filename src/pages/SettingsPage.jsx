@@ -168,16 +168,19 @@ export default function SettingsPage() {
   const [connectModal, setConnectModal] = useState({ open: false, channelId: null, accountInput: '' });
   const [showInstagramModal, setShowInstagramModal] = useState(false);
   const [showFacebookModal, setShowFacebookModal] = useState(false);
+  const [fbTurnedOffDismissed, setFbTurnedOffDismissed] = useState(false);
 
   // Channel Connection States (for all 7 channels)
   const [channelStatus, setChannelStatus] = useState(() => {
     const isIgConnected = localStorage.getItem('omni_instagram_connected') === 'true';
     const igAcc = localStorage.getItem('omni_instagram_account') || '@omniconnect_official';
+    const isFbConnected = localStorage.getItem('omni_facebook_connected') === 'true';
+    const fbAcc = localStorage.getItem('omni_facebook_page') || 'Hallwala';
     return {
       instagram: { connected: isIgConnected, account: igAcc, name: 'Instagram' },
       tiktok: { connected: false, account: '@omniconnect_tiktok', name: 'TikTok' },
       whatsapp: { connected: false, account: '+1 555 123 4567', name: 'WhatsApp for your business' },
-      messenger: { connected: false, account: 'OmniConnect Global Page', name: 'Facebook Messenger chatbot #1' },
+      messenger: { connected: isFbConnected, account: fbAcc, name: 'Facebook Messenger chatbot #1' },
       sms: { connected: false, account: '+1 800 555 0199', name: 'SMS Channel' },
       email: { connected: false, account: 'support@omniconnect.com', name: 'Email Channel' },
       telegram: { connected: false, account: '@OmniConnectBot', name: 'Telegram Channel' },
@@ -297,7 +300,7 @@ export default function SettingsPage() {
       return;
     }
     if (channelId === 'messenger') {
-      setShowFacebookModal(true);
+      navigate('/connect-facebook');
       return;
     }
     if (channelId === 'salesforce') {
@@ -337,6 +340,14 @@ export default function SettingsPage() {
   };
 
   const handleDisconnect = (channelId) => {
+    if (channelId === 'messenger') {
+      try {
+        localStorage.removeItem('omni_facebook_connected');
+        localStorage.removeItem('omni_facebook_page');
+      } catch (e) {
+        console.warn(e);
+      }
+    }
     setChannelStatus((prev) => ({
       ...prev,
       [channelId]: { ...prev[channelId], connected: false },
@@ -393,7 +404,7 @@ export default function SettingsPage() {
       label: 'Messenger',
       title: 'Facebook Messenger chatbot #1',
       subtitle:
-        "Sell products, book appointments, nurture leads, capture contact info, and build relationships all through Messenger with OmniConnect's built for mobile chatbot tools.",
+        "Sell products, book appointments, nurture leads, capture contact info, and build relationships all through Messenger with Manychat's built for mobile chatbot tools.",
       hasLearnMore: true,
       activeColor: 'text-[#0084ff]',
       icon: (
@@ -732,6 +743,24 @@ export default function SettingsPage() {
 
       {/* Main Content Area */}
       <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 min-w-0 bg-[#fbfbfb]">
+        {/* Facebook channel turned off top banner matching Screenshot 1 */}
+        {activeTab === 'messenger' && !channelStatus.messenger?.connected && !fbTurnedOffDismissed && (
+          <div className="max-w-5xl mx-auto mb-4 bg-[#18181b] text-white px-4 py-2.5 rounded-xl flex items-center justify-between text-xs font-medium shadow-sm animate-fade-in">
+            <div className="flex items-center gap-2.5">
+              <div className="w-4 h-4 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center">
+                <Check size={12} strokeWidth={2.5} />
+              </div>
+              <span>Facebook channel was turned off</span>
+            </div>
+            <button
+              onClick={() => setFbTurnedOffDismissed(true)}
+              className="text-slate-400 hover:text-white transition-colors cursor-pointer p-0.5"
+              title="Dismiss"
+            >
+              <X size={15} />
+            </button>
+          </div>
+        )}
         {/* ==================================================================== */}
         {/* 1. SCREENSHOT 1: NOTIFICATIONS VIEW                                  */}
         {/* ==================================================================== */}
@@ -1299,7 +1328,15 @@ export default function SettingsPage() {
         {/* ==================================================================== */}
         {currentChannel && (
           <div className="max-w-5xl w-full mx-auto animate-fade-in pb-16">
-            <div className="w-full bg-white rounded-2xl border border-slate-200/90 shadow-2xs min-h-[540px] sm:min-h-[590px] flex flex-col items-center justify-center text-center p-6 sm:p-12 transition-all">
+            <div className="w-full bg-white rounded-2xl border border-slate-200/90 shadow-2xs min-h-[540px] sm:min-h-[590px] flex flex-col items-center justify-center text-center p-6 sm:p-12 transition-all relative">
+              {/* Channel Label at Top-Left matching Screenshot 1 */}
+              <div className="w-full flex items-center gap-2 mb-6 text-left self-start">
+                <div className="w-6 h-6 rounded-full bg-[#0084ff] flex items-center justify-center text-white shrink-0">
+                  <MessengerBrandIcon className="w-3.5 h-3.5 text-white" />
+                </div>
+                <span className="font-bold text-slate-900 text-base">{currentChannel.label}</span>
+              </div>
+
               {/* Vector Illustration */}
               <div className="mb-2 transform transition-transform hover:scale-105 duration-300">
                 {currentChannel.illustration}
