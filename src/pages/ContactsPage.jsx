@@ -42,57 +42,21 @@ const COUNTRY_CODES = [
   { code: 'SA', dial: '+966', name: 'Saudi Arabia' },
 ];
 
-const INITIAL_CONTACTS = [
-  {
-    id: '1967464879',
-    firstName: 'abuzar',
-    lastName: 'ahmed',
-    name: 'abuzar ahmed',
-    gender: 'Male',
-    channel: 'whatsapp',
-    identifier: '+9203182023581',
-    phone: '+9203182023581',
-    email: 'javedabuzar969@gmail.com',
-    subscribed: '11 seconds ago',
-    status: 'Subscribed',
-    automationsPaused: false,
-    tags: ['WhatsApp Lead'],
-    sequences: ['Welcome Sequence'],
-    optedInThrough: 'Manually',
-    contactTime: 'Unknown',
-  },
-  {
-    id: '1967464880',
-    firstName: 'abuzar',
-    lastName: 'ahmed',
-    name: 'abuzar ahmed',
-    gender: 'Male',
-    channel: 'whatsapp',
-    identifier: '+9203182023581',
-    phone: '+9203182023581',
-    email: 'javedabuzar969@gmail.com',
-    subscribed: '1 minute ago',
-    status: 'Subscribed',
-    automationsPaused: false,
-    tags: ['WhatsApp Lead'],
-    sequences: [],
-    optedInThrough: 'Manually',
-    contactTime: 'Unknown',
-  },
-];
+const INITIAL_CONTACTS = [];
 
 export default function ContactsPage() {
   const navigate = useNavigate();
 
-  // Contacts state with localStorage fallback
+  // Contacts state starts completely empty
   const [contacts, setContacts] = useState(() => {
     try {
-      const saved = localStorage.getItem('omniconnect_contacts');
+      localStorage.removeItem('omniconnect_contacts');
+      const saved = localStorage.getItem('omniconnect_contacts_v2');
       if (saved) return JSON.parse(saved);
     } catch (e) {
       console.warn(e);
     }
-    return INITIAL_CONTACTS;
+    return [];
   });
 
   const [loading, setLoading] = useState(false);
@@ -136,55 +100,11 @@ export default function ContactsPage() {
   // Sync to localStorage
   useEffect(() => {
     try {
-      localStorage.setItem('omniconnect_contacts', JSON.stringify(contacts));
+      localStorage.setItem('omniconnect_contacts_v2', JSON.stringify(contacts));
     } catch (e) {
       console.warn(e);
     }
   }, [contacts]);
-
-  // Load backend conversations into contacts if available
-  useEffect(() => {
-    loadBackendContacts();
-  }, []);
-
-  const loadBackendContacts = async () => {
-    try {
-      const res = await apiClient.get('/api/conversations');
-      if (res.data?.success && Array.isArray(res.data.data) && res.data.data.length > 0) {
-        const mapped = res.data.data.map((c) => {
-          const parts = (c.name || 'Contact').split(' ');
-          const fName = parts[0] || 'Contact';
-          const lName = parts.slice(1).join(' ') || '';
-          return {
-            id: String(c.id || c._id || Math.floor(1000000000 + Math.random() * 9000000000)),
-            firstName: fName,
-            lastName: lName,
-            name: c.name || `${fName} ${lName}`.trim(),
-            gender: 'Male',
-            channel: c.channel || 'whatsapp',
-            identifier: c.phoneNumber || '+1 555 000 0000',
-            phone: c.phoneNumber || '+1 555 000 0000',
-            email: c.email || `${fName.toLowerCase()}@example.com`,
-            subscribed: c.time || 'Recent',
-            status: 'Subscribed',
-            automationsPaused: false,
-            tags: [c.channel === 'facebook' ? 'Facebook Lead' : 'WhatsApp Lead'],
-            sequences: [],
-            optedInThrough: 'Manually',
-            contactTime: 'Unknown',
-          };
-        });
-
-        setContacts((prev) => {
-          const existingIds = new Set(prev.map((p) => p.id));
-          const uniqueNew = mapped.filter((m) => !existingIds.has(m.id));
-          return [...prev, ...uniqueNew];
-        });
-      }
-    } catch (err) {
-      console.warn('Backend contacts fetch failed:', err.message);
-    }
-  };
 
   // Filtered contacts
   const filtered = contacts.filter((c) => {
@@ -652,8 +572,23 @@ export default function ContactsPage() {
 
                     {filtered.length === 0 && (
                       <tr>
-                        <td colSpan={7} className="py-12 text-center text-slate-400 text-xs">
-                          No contacts found. Click <strong>Create New Contact</strong> to add one.
+                        <td colSpan={7} className="py-20 text-center">
+                          <div className="flex flex-col items-center justify-center max-w-sm mx-auto">
+                            <div className="w-14 h-14 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 mb-3 border border-slate-200">
+                              <User size={26} className="text-slate-400" />
+                            </div>
+                            <h4 className="text-base font-bold text-slate-900 mb-1">No contacts yet</h4>
+                            <p className="text-xs text-slate-500 mb-4 text-center">
+                              Contacts created or subscribed will appear here.
+                            </p>
+                            <button
+                              onClick={() => setCreateModalOpen(true)}
+                              className="px-4 py-2 bg-[#0066ff] hover:bg-blue-700 text-white font-semibold rounded-lg text-xs transition-colors cursor-pointer shadow-xs flex items-center gap-1.5"
+                            >
+                              <Plus size={14} />
+                              <span>Create New Contact</span>
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     )}
