@@ -885,42 +885,37 @@ export default function ContactsPage() {
       )}
 
       {/* ───────────────────────────────────────────────────────────── */}
-      {/* 2. CONTACT DETAILS SLIDE-OVER DRAWER (Matching Screenshot 2) */}
+      {/* 2. CONTACT DETAILS CENTERED MODAL (Matching User Screenshot) */}
       {/* ───────────────────────────────────────────────────────────── */}
       {selectedContact && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-2xs flex justify-end z-50 animate-fade-in">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-fade-in">
           {/* Backdrop click to close */}
           <div
-            className="flex-1"
+            className="absolute inset-0"
             onClick={() => setSelectedContact(null)}
           />
 
-          {/* Drawer Body */}
-          <div className="w-full max-w-2xl bg-white h-full shadow-2xl border-l border-slate-200 overflow-y-auto flex flex-col animate-slide-left">
+          {/* Centered Modal Card */}
+          <div className="relative bg-white rounded-2xl max-w-2xl w-full shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[90vh] z-10 animate-scale-in">
             
-            {/* Top Close Button Bar */}
-            <div className="p-4 px-6 border-b border-slate-100 flex items-center justify-between sticky top-0 bg-white/95 backdrop-blur-xs z-10">
-              <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                Contact Details
-              </span>
-              <button
-                onClick={() => setSelectedContact(null)}
-                className="text-slate-400 hover:text-slate-700 p-1.5 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer"
-                title="Close drawer"
-              >
-                <X size={20} />
-              </button>
-            </div>
+            {/* Top Close Button (top-right corner of the modal) */}
+            <button
+              onClick={() => setSelectedContact(null)}
+              className="absolute top-3.5 right-3.5 text-slate-400 hover:text-slate-700 p-1.5 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer z-20"
+              title="Close modal"
+            >
+              <X size={20} />
+            </button>
 
-            {/* Two-Column Grid matching Screenshot 2 */}
-            <div className="p-6 grid grid-cols-1 md:grid-cols-12 gap-8 flex-1">
+            {/* Modal Body: Two-Column Grid matching Screenshot */}
+            <div className="p-6 pt-7 grid grid-cols-1 md:grid-cols-12 gap-7 overflow-y-auto">
               
-              {/* LEFT COLUMN: Avatar, Pause, Status list, Start Chat */}
-              <div className="md:col-span-5 space-y-5">
+              {/* LEFT COLUMN: Avatar, Pause, Status list */}
+              <div className="md:col-span-5 space-y-4">
                 
-                {/* Silhouette Profile Avatar */}
-                <div className="w-full aspect-square max-w-[220px] mx-auto rounded-2xl bg-slate-100 border border-slate-200 flex items-end justify-center overflow-hidden shadow-inner">
-                  <svg className="w-44 h-44 text-slate-300" viewBox="0 0 24 24" fill="currentColor">
+                {/* Silhouette Profile Avatar matching screenshot */}
+                <div className="w-full aspect-square max-w-[200px] mx-auto rounded-2xl bg-slate-100 border border-slate-200 flex items-end justify-center overflow-hidden shadow-inner">
+                  <svg className="w-40 h-40 text-slate-300" viewBox="0 0 24 24" fill="currentColor">
                     <path d="M12 12c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm0 2c-3.33 0-10 1.67-10 5v3h20v-3c0-3.33-6.67-5-10-5z" />
                   </svg>
                 </div>
@@ -943,8 +938,8 @@ export default function ContactsPage() {
                   )}
                 </button>
 
-                {/* Status Items matching Screenshot 2 */}
-                <div className="space-y-3 text-xs text-slate-700 pt-2 border-t border-slate-100">
+                {/* Status Items matching Screenshot */}
+                <div className="space-y-2.5 text-xs text-slate-700 pt-1">
                   
                   {/* Subscribed (Unsubscribe) toggle */}
                   <div className="flex items-center gap-2">
@@ -954,27 +949,27 @@ export default function ContactsPage() {
                     </span>
                     <button
                       onClick={() => handleToggleSubscribed(selectedContact.id)}
-                      className="text-slate-400 hover:text-slate-700 hover:underline cursor-pointer ml-1"
+                      className="text-slate-400 hover:text-slate-700 hover:underline cursor-pointer ml-0.5"
                     >
                       ({selectedContact.status === 'Subscribed' ? 'Unsubscribe' : 'Subscribe'})
                     </button>
                   </div>
 
                   {/* Gender */}
-                  <div className="flex items-center gap-2.5 text-slate-600">
+                  <div className="flex items-center gap-2 text-slate-600">
                     <span className="text-base leading-none">♂</span>
                     <span>{selectedContact.gender || 'Male'}</span>
                   </div>
 
                   {/* Contact Time */}
-                  <div className="flex items-center gap-2.5 text-slate-600">
+                  <div className="flex items-center gap-2 text-slate-600">
                     <Clock size={14} className="text-slate-400 shrink-0" />
                     <span>Contact Time: Unknown</span>
                     <HelpCircle size={13} className="text-slate-400" />
                   </div>
 
                   {/* Contact ID */}
-                  <div className="flex items-center gap-2.5 text-slate-600 font-mono text-[11px]">
+                  <div className="flex items-center gap-2 text-slate-600 font-mono text-[11px]">
                     <span className="px-1.5 py-0.5 bg-slate-100 border border-slate-200 rounded text-slate-500 font-bold">
                       ID
                     </span>
@@ -982,57 +977,73 @@ export default function ContactsPage() {
                   </div>
 
                   {/* Opted-in for SMS */}
-                  <div className="pt-2 space-y-1">
-                    <div className="flex items-center gap-2 text-slate-500 text-[11.5px]">
+                  <div className="pt-1.5 space-y-0.5">
+                    <div className="flex items-center gap-2 text-slate-500 text-[11px]">
                       <span>↩️ Opted-In for SMS</span>
                     </div>
-                    <div className="font-mono text-slate-700 text-xs pl-6">
+                    <div className="font-mono text-slate-700 text-xs pl-5">
                       {selectedContact.phone || selectedContact.identifier}
                     </div>
                   </div>
 
                   {/* Opted-in for WhatsApp */}
-                  <div className="pt-1 space-y-1">
-                    <div className="flex items-center gap-2 text-slate-500 text-[11.5px]">
+                  <div className="pt-0.5 space-y-0.5">
+                    <div className="flex items-center gap-2 text-slate-500 text-[11px]">
                       <WhatsAppBrandIcon className="w-3.5 h-3.5" />
                       <span>Opted-In for WhatsApp</span>
                     </div>
-                    <div className="font-mono text-slate-700 text-xs pl-6">
+                    <div className="font-mono text-slate-700 text-xs pl-5">
                       {selectedContact.phone?.replace('+', '') || '9203182023581'}
                     </div>
                   </div>
 
                   {/* Opted-in for Email */}
-                  <div className="pt-1 space-y-1">
-                    <div className="flex items-center gap-2 text-slate-500 text-[11.5px]">
+                  <div className="pt-0.5 space-y-0.5">
+                    <div className="flex items-center gap-2 text-slate-500 text-[11px]">
                       <Mail size={13} className="text-purple-600" />
                       <span>Opted-In for Email</span>
                     </div>
-                    <div className="text-slate-700 text-xs pl-6 truncate">
+                    <div className="text-slate-700 text-xs pl-5 truncate">
                       {selectedContact.email || 'javedabuzar969@gmail.com'}
                     </div>
                   </div>
                 </div>
 
-                {/* Start Chat Button matching Screenshot 2 */}
-                <div className="pt-3">
+                {/* Start Chat Button */}
+                <div className="pt-2">
                   <button
                     onClick={() => {
                       toast.success(`Opening chat with ${selectedContact.name}`);
                       navigate('/inbox');
                     }}
-                    className="w-full py-2.5 bg-[#0066ff] hover:bg-blue-700 text-white font-semibold rounded-xl text-xs transition-colors cursor-pointer shadow-sm flex items-center justify-center gap-2"
+                    className="w-full py-2 bg-[#0066ff] hover:bg-blue-700 text-white font-semibold rounded-lg text-xs transition-colors cursor-pointer shadow-xs flex items-center justify-center gap-1.5"
                   >
-                    <MessageSquare size={14} />
+                    <MessageSquare size={13} />
                     <span>Start Chat</span>
                   </button>
                 </div>
               </div>
 
-              {/* RIGHT COLUMN: Contact Tags, Subscribed to Sequences, System Fields */}
-              <div className="md:col-span-7 space-y-6">
+              {/* RIGHT COLUMN: Contact Name Header, Contact Tags, Sequences, System Fields */}
+              <div className="md:col-span-7 space-y-5 pr-2">
                 
-                {/* Section: Contact Tags matching Screenshot 2 */}
+                {/* Header: Contact Name + Kebab Menu (Matching Screenshot) */}
+                <div className="flex items-center justify-between pb-1">
+                  <h3 className="text-base font-bold text-slate-900 tracking-tight">
+                    {selectedContact.name || `${selectedContact.firstName} ${selectedContact.lastName}`}
+                  </h3>
+                  <div className="flex items-center gap-1 pr-6">
+                    <button
+                      onClick={() => toast(`Options for ${selectedContact.name}`)}
+                      className="p-1 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-md transition-colors cursor-pointer"
+                      title="More options"
+                    >
+                      <MoreHorizontal size={18} />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Section: Contact Tags matching Screenshot */}
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
                     <h4 className="text-xs font-bold text-slate-900">Contact Tags</h4>
@@ -1045,7 +1056,7 @@ export default function ContactsPage() {
                   </div>
 
                   {/* Tag Chips */}
-                  <div className="flex flex-wrap gap-1.5 min-h-[32px] items-center">
+                  <div className="flex flex-wrap gap-1.5 min-h-[28px] items-center">
                     {(selectedContact.tags || []).map((t) => (
                       <span
                         key={t}
@@ -1097,7 +1108,7 @@ export default function ContactsPage() {
                 </div>
 
                 {/* Section: Subscribed to Sequences */}
-                <div className="space-y-2 pt-2 border-t border-slate-100">
+                <div className="space-y-1.5 pt-2 border-t border-slate-100">
                   <div className="flex items-center justify-between">
                     <h4 className="text-xs font-bold text-slate-900">Subscribed to Sequences</h4>
                     <button
@@ -1142,12 +1153,12 @@ export default function ContactsPage() {
                   </div>
                 </div>
 
-                {/* Section: System Fields matching Screenshot 2 */}
-                <div className="space-y-3 pt-2 border-t border-slate-100">
+                {/* Section: System Fields matching Screenshot */}
+                <div className="space-y-2.5 pt-2 border-t border-slate-100">
                   <h4 className="text-xs font-bold text-slate-900">System Fields</h4>
 
                   {/* First Name Field Box */}
-                  <div className="bg-[#eff6ff] border border-blue-200/90 rounded-xl p-2.5 px-3.5 space-y-0.5">
+                  <div className="bg-[#eff6ff] border border-blue-200/90 rounded-xl p-2 px-3.5 space-y-0.5">
                     <span className="text-[11px] text-slate-500 font-medium block">First Name:</span>
                     <span className="text-xs font-semibold text-slate-900 block">
                       {selectedContact.firstName || selectedContact.name?.split(' ')[0] || 'abuzar'}
@@ -1155,7 +1166,7 @@ export default function ContactsPage() {
                   </div>
 
                   {/* Last Name Field Box */}
-                  <div className="bg-[#eff6ff] border border-blue-200/90 rounded-xl p-2.5 px-3.5 space-y-0.5">
+                  <div className="bg-[#eff6ff] border border-blue-200/90 rounded-xl p-2 px-3.5 space-y-0.5">
                     <span className="text-[11px] text-slate-500 font-medium block">Last Name:</span>
                     <span className="text-xs font-semibold text-slate-900 block">
                       {selectedContact.lastName || selectedContact.name?.split(' ')[1] || 'ahmed'}
@@ -1163,7 +1174,7 @@ export default function ContactsPage() {
                   </div>
 
                   {/* Email Field Box */}
-                  <div className="bg-[#eff6ff] border border-blue-200/90 rounded-xl p-2.5 px-3.5 space-y-0.5">
+                  <div className="bg-[#eff6ff] border border-blue-200/90 rounded-xl p-2 px-3.5 space-y-0.5">
                     <span className="text-[11px] text-slate-500 font-medium block">Email:</span>
                     <span className="text-xs font-semibold text-slate-900 block truncate">
                       {selectedContact.email || 'javedabuzar969@gmail.com'}
@@ -1171,7 +1182,7 @@ export default function ContactsPage() {
                   </div>
 
                   {/* Phone Field Box */}
-                  <div className="bg-[#eff6ff] border border-blue-200/90 rounded-xl p-2.5 px-3.5 space-y-0.5">
+                  <div className="bg-[#eff6ff] border border-blue-200/90 rounded-xl p-2 px-3.5 space-y-0.5">
                     <span className="text-[11px] text-slate-500 font-medium block">Phone:</span>
                     <span className="text-xs font-semibold text-slate-900 block font-mono">
                       {selectedContact.phone || selectedContact.identifier || '+9203182023581'}
