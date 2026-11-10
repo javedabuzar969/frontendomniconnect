@@ -13,6 +13,7 @@ import {
   Search,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import { apiClient } from '../api/client';
 import {
   InstagramIcon,
   TikTokIcon,
@@ -338,11 +339,26 @@ export default function SettingsPage() {
     setConnectModal({ open: false, channelId: null, accountInput: '' });
   };
 
-  const handleDisconnect = (channelId) => {
+  const handleDisconnect = async (channelId) => {
+    if (channelId === 'instagram') {
+      try {
+        localStorage.removeItem('omni_instagram_connected');
+        localStorage.removeItem('omni_instagram_account');
+        localStorage.removeItem('omni_instagram_page_id');
+        localStorage.removeItem('omni_instagram_ig_id');
+        await apiClient.post('/api/integrations/facebook/instagram/disconnect', { deleteChats: true }).catch(() => {});
+      } catch (e) {
+        console.warn(e);
+      }
+    }
     if (channelId === 'messenger') {
       try {
         localStorage.removeItem('omni_facebook_connected');
         localStorage.removeItem('omni_facebook_page');
+        localStorage.removeItem('omni_facebook_page_id');
+        await apiClient.post('/api/integrations/facebook/disconnect-page', {
+          pageId: localStorage.getItem('omni_facebook_page_id') || 'all',
+        }).catch(() => {});
       } catch (e) {
         console.warn(e);
       }

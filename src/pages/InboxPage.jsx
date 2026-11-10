@@ -222,18 +222,24 @@ export default function InboxPage() {
   const handleSyncMetaChats = async () => {
     setIsSyncing(true);
     try {
-      const [fbRes, igRes] = await Promise.allSettled([
-        apiClient.post('/api/integrations/facebook/sync'),
-        apiClient.post('/api/integrations/facebook/instagram/sync-chats'),
-      ]);
-      const fbSuccess = fbRes.status === 'fulfilled' && fbRes.value.data?.success;
-      const igSuccess = igRes.status === 'fulfilled' && igRes.value.data?.success;
+      const isIgConnected = localStorage.getItem('omni_instagram_connected') === 'true';
+      const isFbConnected = localStorage.getItem('omni_facebook_connected') === 'true';
 
-      if (fbSuccess || igSuccess) {
-        toast.success('Meta & Instagram chats synced successfully!');
-      } else {
-        toast.success('Sync check complete. Local database is up to date.');
+      const promises = [];
+      if (isFbConnected) {
+        promises.push(apiClient.post('/api/integrations/facebook/sync'));
       }
+      if (isIgConnected) {
+        promises.push(apiClient.post('/api/integrations/facebook/instagram/sync-chats'));
+      }
+
+      if (promises.length === 0) {
+        toast('No channels connected to sync.');
+        return;
+      }
+
+      await Promise.allSettled(promises);
+      toast.success('Chats synced successfully!');
       await loadConversations();
     } catch (err) {
       toast.error('Sync error: ' + (err.response?.data?.error || err.message));
@@ -375,6 +381,13 @@ export default function InboxPage() {
 
   const filteredConversations = conversations
     .filter((c) => {
+      // Hide chats from channels that are disconnected
+      const isIgConnected = localStorage.getItem('omni_instagram_connected') === 'true';
+      if (c.channel === 'instagram' && !isIgConnected) return false;
+
+      const isFbConnected = localStorage.getItem('omni_facebook_connected') === 'true';
+      if ((c.channel === 'facebook' || c.channel === 'messenger') && !isFbConnected) return false;
+
       if (activeFolder === 'reminders' && !c.hasReminder) return false;
       if (activeFolder === 'favorites' && !c.isFavorite) return false;
       if (statusFilter !== 'all' && c.status !== statusFilter) return false;
