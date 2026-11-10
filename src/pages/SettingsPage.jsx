@@ -346,7 +346,7 @@ export default function SettingsPage() {
         localStorage.removeItem('omni_instagram_account');
         localStorage.removeItem('omni_instagram_page_id');
         localStorage.removeItem('omni_instagram_ig_id');
-        await apiClient.post('/api/integrations/facebook/instagram/disconnect', { deleteChats: true }).catch(() => {});
+        await apiClient.post('/api/integrations/facebook/instagram/disconnect', { deleteChats: false }).catch(() => {});
       } catch (e) {
         console.warn(e);
       }
