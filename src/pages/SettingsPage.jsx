@@ -192,6 +192,49 @@ export default function SettingsPage() {
     if (tab) setActiveTab(tab);
   }, [searchParams]);
 
+  // Sync real live Meta / Facebook & Instagram channel status from database on mount
+  useEffect(() => {
+    const syncRealChannels = async () => {
+      try {
+        const res = await apiClient.get('/api/integrations/facebook/pages');
+        if (res.data?.success && Array.isArray(res.data.connectedPages)) {
+          const fb = res.data.connectedPages.find((p) => !p.pageId?.startsWith('ig_') && p.status === 'connected');
+          const ig = res.data.connectedPages.find((p) => (p.pageId?.startsWith('ig_') || p.category === 'Instagram') && p.status === 'connected');
+
+          setChannelStatus((prev) => ({
+            ...prev,
+            messenger: {
+              ...prev.messenger,
+              connected: !!fb,
+              account: fb ? fb.name : prev.messenger.account,
+            },
+            instagram: {
+              ...prev.instagram,
+              connected: !!ig,
+              account: ig ? ig.name : prev.instagram.account,
+            },
+          }));
+
+          if (fb) {
+            try {
+              localStorage.setItem('omni_facebook_connected', 'true');
+              localStorage.setItem('omni_facebook_page', fb.name);
+            } catch {}
+          }
+          if (ig) {
+            try {
+              localStorage.setItem('omni_instagram_connected', 'true');
+              localStorage.setItem('omni_instagram_account', ig.name);
+            } catch {}
+          }
+        }
+      } catch (err) {
+        console.warn('[Settings] Sync channels from backend:', err.message);
+      }
+    };
+    syncRealChannels();
+  }, []);
+
   const handleTabChange = (tabId) => {
     setActiveTab(tabId);
     setSearchParams({ tab: tabId });
