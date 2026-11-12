@@ -206,13 +206,13 @@ export default function SettingsPage() {
             messenger: {
               ...prev.messenger,
               connected: !!fb,
-              account: fb ? fb.name : prev.messenger.account,
+              account: fb ? fb.name : 'Facebook Messenger',
               pageId: fb ? fb.pageId : null,
             },
             instagram: {
               ...prev.instagram,
               connected: !!ig,
-              account: ig ? ig.name : prev.instagram.account,
+              account: ig ? ig.name : '@omniconnect_official',
               pageId: ig ? ig.pageId : null,
             },
           }));
@@ -222,12 +222,21 @@ export default function SettingsPage() {
               localStorage.setItem('omni_facebook_connected', 'true');
               localStorage.setItem('omni_facebook_page', fb.name);
             } catch {}
+          } else {
+            localStorage.removeItem('omni_facebook_connected');
+            localStorage.removeItem('omni_facebook_page');
+            localStorage.removeItem('omni_facebook_page_id');
           }
           if (ig) {
             try {
               localStorage.setItem('omni_instagram_connected', 'true');
               localStorage.setItem('omni_instagram_account', ig.name);
             } catch {}
+          } else {
+            localStorage.removeItem('omni_instagram_connected');
+            localStorage.removeItem('omni_instagram_account');
+            localStorage.removeItem('omni_instagram_page_id');
+            localStorage.removeItem('omni_instagram_ig_id');
           }
         }
       } catch (err) {

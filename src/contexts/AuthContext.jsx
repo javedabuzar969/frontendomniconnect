@@ -82,6 +82,7 @@ export function AuthProvider({ children }) {
         throw new Error('Authentication response did not contain a valid session token.');
       }
 
+      purgeUserLocalCache();
       localStorage.setItem(TOKEN_KEY, token);
       sessionStorage.setItem(LEGACY_TOKEN_KEY, token);
       localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(authenticatedUser));
@@ -109,6 +110,7 @@ export function AuthProvider({ children }) {
         throw new Error('Authentication response did not contain a valid session token.');
       }
 
+      purgeUserLocalCache();
       localStorage.setItem(TOKEN_KEY, token);
       sessionStorage.setItem(LEGACY_TOKEN_KEY, token);
       localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(authenticatedUser));
@@ -146,14 +148,27 @@ export function AuthProvider({ children }) {
     }
   };
 
+  // Helper to purge workspace/channel cache from localStorage on user change
+  const purgeUserLocalCache = () => {
+    try {
+      const keysToRemove = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (k && (k.startsWith('omni_') || k.startsWith('__oc_'))) {
+          keysToRemove.push(k);
+        }
+      }
+      keysToRemove.forEach((k) => localStorage.removeItem(k));
+      sessionStorage.removeItem(LEGACY_TOKEN_KEY);
+    } catch (_) {}
+  };
+
   // ── Logout ──────────────────────────────────────────────
   const logout = async () => {
     try {
       await supabase.auth.signOut();
     } catch (_) {}
-    localStorage.removeItem(TOKEN_KEY);
-    sessionStorage.removeItem(LEGACY_TOKEN_KEY);
-    localStorage.removeItem(CURRENT_USER_KEY);
+    purgeUserLocalCache();
     setUser(null);
   };
 
