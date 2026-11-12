@@ -61,6 +61,14 @@ export async function disconnectSalesforce() {
   return res.data;
 }
 
+/**
+ * Sync all workspace contacts directly into Salesforce CRM standard Contact object.
+ */
+export async function syncContactsToSalesforce() {
+  const res = await apiClient.post('/api/integrations/salesforce/sync-contacts');
+  return res.data; // { success, message, results: { total, created, updated, failed } }
+}
+
 function delay(ms) {
   return new Promise((r) => setTimeout(r, ms));
 }

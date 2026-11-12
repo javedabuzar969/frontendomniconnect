@@ -27,8 +27,10 @@ import {
   WhatsAppBrandIcon,
   InstagramIcon,
   MessengerBrandIcon,
+  SalesforceBrandIcon,
 } from '../components/ui/Icons';
 import { apiClient } from '../api/client';
+import { syncContactsToSalesforce } from '../api/integrations';
 import toast from 'react-hot-toast';
 
 const COUNTRY_CODES = [
@@ -593,6 +595,32 @@ export default function ContactsPage() {
     });
   };
 
+  // Salesforce Sync State & Handler
+  const [syncingSf, setSyncingSf] = useState(false);
+
+  const handleSyncToSalesforce = async () => {
+    try {
+      setSyncingSf(true);
+      toast.loading('Pushing contacts to Salesforce CRM...', { id: 'sf-sync' });
+      const data = await syncContactsToSalesforce();
+      toast.dismiss('sf-sync');
+
+      if (data && data.success) {
+        toast.success(
+          data.message || `Successfully synced ${data.results?.created || 0} contacts to Salesforce!`,
+          { duration: 5000 }
+        );
+      } else {
+        toast.error(data?.error || 'Failed to sync contacts to Salesforce');
+      }
+    } catch (err) {
+      toast.dismiss('sf-sync');
+      toast.error(err.response?.data?.error || err.message || 'Salesforce sync error');
+    } finally {
+      setSyncingSf(false);
+    }
+  };
+
   const isAllSelected = filtered.length > 0 && selectedIds.length === filtered.length;
 
   return (
@@ -604,6 +632,15 @@ export default function ContactsPage() {
         </div>
 
         <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
+          <button
+            onClick={handleSyncToSalesforce}
+            disabled={syncingSf}
+            className="px-3.5 py-2 bg-[#00A1E0] hover:bg-[#008bc2] disabled:opacity-60 text-white rounded-lg flex items-center justify-center gap-1.5 font-semibold text-xs sm:text-sm shadow-2xs transition-all cursor-pointer whitespace-nowrap"
+          >
+            <SalesforceBrandIcon className="w-4 h-4" />
+            <span>{syncingSf ? 'Syncing to Salesforce...' : 'Sync to Salesforce'}</span>
+          </button>
+
           <button
             onClick={() => setCreateModalOpen(true)}
             className="px-4 py-2 bg-white border border-slate-300 hover:bg-slate-50 text-slate-800 rounded-lg flex items-center justify-center gap-1.5 font-semibold text-xs sm:text-sm shadow-2xs transition-all cursor-pointer whitespace-nowrap"
