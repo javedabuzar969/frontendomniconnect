@@ -381,13 +381,8 @@ export default function InboxPage() {
 
   const filteredConversations = conversations
     .filter((c) => {
-      // Hide chats from channels that are disconnected
-      const isIgConnected = localStorage.getItem('omni_instagram_connected') === 'true';
-      if (c.channel === 'instagram' && !isIgConnected) return false;
-
-      const isFbConnected = localStorage.getItem('omni_facebook_connected') === 'true';
-      if ((c.channel === 'facebook' || c.channel === 'messenger') && !isFbConnected) return false;
-
+      // Backend /api/conversations strictly handles workspace isolation and active channel filtering.
+      // Do not suppress valid messages returned by the backend if local storage hasn't synced yet.
       if (activeFolder === 'reminders' && !c.hasReminder) return false;
       if (activeFolder === 'favorites' && !c.isFavorite) return false;
       if (statusFilter !== 'all' && c.status !== statusFilter) return false;
