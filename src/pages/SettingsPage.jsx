@@ -207,11 +207,13 @@ export default function SettingsPage() {
               ...prev.messenger,
               connected: !!fb,
               account: fb ? fb.name : prev.messenger.account,
+              pageId: fb ? fb.pageId : null,
             },
             instagram: {
               ...prev.instagram,
               connected: !!ig,
               account: ig ? ig.name : prev.instagram.account,
+              pageId: ig ? ig.pageId : null,
             },
           }));
 
@@ -383,6 +385,10 @@ export default function SettingsPage() {
   };
 
   const handleDisconnect = async (channelId) => {
+    const channelName = channelStatus[channelId]?.name || 'Channel';
+    const confirmed = window.confirm(`Kya aap "${channelName}" disconnect karna chahte hain?\n\nAapke chats aur contacts safe rahenge.`);
+    if (!confirmed) return;
+
     if (channelId === 'instagram') {
       try {
         localStorage.removeItem('omni_instagram_connected');
@@ -396,21 +402,23 @@ export default function SettingsPage() {
     }
     if (channelId === 'messenger') {
       try {
+        // Get page ID from live status or localStorage
+        const pageId = channelStatus.messenger?.pageId || localStorage.getItem('omni_facebook_page_id') || '1297933293411171';
         localStorage.removeItem('omni_facebook_connected');
         localStorage.removeItem('omni_facebook_page');
         localStorage.removeItem('omni_facebook_page_id');
         await apiClient.post('/api/integrations/facebook/disconnect-page', {
-          pageId: localStorage.getItem('omni_facebook_page_id') || 'all',
-        }).catch(() => {});
+          pageId,
+        }).catch((err) => console.warn('[Messenger disconnect]', err.message));
       } catch (e) {
         console.warn(e);
       }
     }
     setChannelStatus((prev) => ({
       ...prev,
-      [channelId]: { ...prev[channelId], connected: false },
+      [channelId]: { ...prev[channelId], connected: false, pageId: null },
     }));
-    toast(`${channelStatus[channelId]?.name || 'Channel'} disconnected`, { icon: '🔌' });
+    toast(`${channelName} disconnect ho gaya`, { icon: '🔌' });
   };
 
   // Channels List matching Screenshots
@@ -1460,16 +1468,16 @@ export default function SettingsPage() {
                     </button>
                   )
                 ) : channelStatus[activeTab]?.connected ? (
-                  <div className="flex flex-col items-center gap-3 animate-fade-in">
-                    <div className="flex items-center gap-2 px-3.5 py-1.5 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-full text-xs font-semibold">
+                  <div className="flex flex-col items-center gap-4 animate-fade-in">
+                    <div className="flex items-center gap-2 px-4 py-2 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-full text-xs font-semibold">
                       <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
                       <span>Connected to {channelStatus[activeTab].account}</span>
                     </div>
                     <button
                       onClick={() => handleDisconnect(activeTab)}
-                      className="px-5 py-2 bg-white border border-slate-200 hover:border-red-300 text-slate-600 hover:text-red-600 rounded-lg text-xs font-semibold transition-all cursor-pointer shadow-xs"
+                      className="px-6 py-2.5 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-sm font-semibold transition-all cursor-pointer shadow-sm flex items-center gap-2 active:scale-95"
                     >
-                      Disconnect
+                      🔌 Disconnect
                     </button>
                   </div>
                 ) : (
