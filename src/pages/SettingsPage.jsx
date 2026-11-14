@@ -1596,17 +1596,6 @@ export default function SettingsPage() {
                         <SalesforceBrandIcon className="w-4 h-4" />
                         <span>{sfConnecting ? 'Connecting...' : 'Connect Salesforce Organization'}</span>
                       </button>
-
-                      <div className="pt-2 border-t border-slate-200/80 flex items-center justify-between text-[11px] text-slate-500">
-                        <span>App Owner / Dev Org?</span>
-                        <button
-                          type="button"
-                          onClick={handleConnectSalesforce}
-                          className="text-[#00A1E0] hover:underline font-medium cursor-pointer"
-                        >
-                          OAuth Web Pop-up &rarr;
-                        </button>
-                      </div>
                     </form>
                   )
                 ) : channelStatus[activeTab]?.connected ? (
