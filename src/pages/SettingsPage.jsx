@@ -24,6 +24,7 @@ import {
 } from '../components/ui/Icons';
 import {
   getSalesforceConnectUrl,
+  connectSalesforceDirect,
   getSalesforceStatus,
   disconnectSalesforce,
 } from '../api/integrations';
@@ -253,6 +254,10 @@ export default function SettingsPage() {
 
   // Salesforce CRM State & Handlers
   const [salesforceDomain, setSalesforceDomain] = useState('');
+  const [sfUsername, setSfUsername] = useState('');
+  const [sfPassword, setSfPassword] = useState('');
+  const [sfSecurityToken, setSfSecurityToken] = useState('');
+  const [sfConnecting, setSfConnecting] = useState(false);
   const [salesforceStatus, setSalesforceStatus] = useState({
     loading: false,
     connected: false,
@@ -286,6 +291,44 @@ export default function SettingsPage() {
       loadSalesforceStatus();
     }
   }, [activeTab]);
+
+  const handleDirectSalesforceConnect = async (e) => {
+    e?.preventDefault();
+    if (!sfUsername.trim() || !sfPassword) {
+      toast.error('Please enter your Salesforce username and password');
+      return;
+    }
+    try {
+      setSfConnecting(true);
+      toast.loading('Connecting to your Salesforce CRM organization...', { id: 'sf-direct' });
+      const res = await connectSalesforceDirect({
+        username: sfUsername.trim(),
+        password: sfPassword,
+        securityToken: sfSecurityToken.trim(),
+        customDomain: salesforceDomain.trim(),
+      });
+      toast.dismiss('sf-direct');
+      if (res && res.success) {
+        setSalesforceStatus({
+          loading: false,
+          connected: true,
+          orgId: res.orgId,
+          instanceUrl: res.instanceUrl,
+          connectedAt: new Date().toISOString(),
+        });
+        toast.success('Successfully connected to Salesforce CRM! 🎉');
+        setSfPassword('');
+        setSfSecurityToken('');
+      } else {
+        toast.error(res?.error || 'Failed to connect to Salesforce');
+      }
+    } catch (err) {
+      toast.dismiss('sf-direct');
+      toast.error(err.response?.data?.error || err.message || 'Connection error');
+    } finally {
+      setSfConnecting(false);
+    }
+  };
 
   const handleConnectSalesforce = async () => {
     try {
@@ -2748,34 +2791,82 @@ export default function SettingsPage() {
                         </div>
                       </div>
                     ) : (
-                      <>
-                        <div className="text-xs font-bold text-slate-800">Salesforce My Domain / Login URL</div>
-                        <div className="text-xs text-slate-500">
-                          Enter your Salesforce company domain to connect your specific organization (leave empty for standard login):
+                      <form onSubmit={handleDirectSalesforceConnect} className="space-y-3">
+                        <div>
+                          <div className="text-xs font-bold text-slate-800">Connect Your Salesforce CRM</div>
+                          <div className="text-[11px] text-slate-500">
+                            Connect your Salesforce organization securely. No developer setup or external client apps needed.
+                          </div>
                         </div>
 
-                        <div className="space-y-1.5">
-                          <input
-                            type="text"
-                            value={salesforceDomain}
-                            onChange={(e) => setSalesforceDomain(e.target.value)}
-                            placeholder="e.g. yourcompany.my.salesforce.com"
-                            className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-[#00A1E0] focus:ring-1 focus:ring-[#00A1E0]"
-                          />
-                          <p className="text-[10px] text-slate-400">
-                            Found in your browser address bar when logged into Salesforce.
-                          </p>
+                        <div className="space-y-2">
+                          <div>
+                            <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                              Salesforce Username *
+                            </label>
+                            <input
+                              type="text"
+                              required
+                              value={sfUsername}
+                              onChange={(e) => setSfUsername(e.target.value)}
+                              placeholder="e.g. user@yourcompany.com"
+                              className="w-full px-3 py-1.5 bg-white border border-slate-300 rounded-lg text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-[#00A1E0]"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                              Salesforce Password *
+                            </label>
+                            <input
+                              type="password"
+                              required
+                              value={sfPassword}
+                              onChange={(e) => setSfPassword(e.target.value)}
+                              placeholder="Your Salesforce password"
+                              className="w-full px-3 py-1.5 bg-white border border-slate-300 rounded-lg text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-[#00A1E0]"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                              Security Token <span className="font-normal text-slate-400">(Optional if IP trusted)</span>
+                            </label>
+                            <input
+                              type="password"
+                              value={sfSecurityToken}
+                              onChange={(e) => setSfSecurityToken(e.target.value)}
+                              placeholder="Salesforce Security Token"
+                              className="w-full px-3 py-1.5 bg-white border border-slate-300 rounded-lg text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-[#00A1E0]"
+                            />
+                            <p className="text-[10px] text-slate-400 mt-0.5">
+                              Found in Salesforce under: Settings &rarr; Reset My Security Token.
+                            </p>
+                          </div>
+
+                          <div>
+                            <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                              My Domain / Login URL <span className="font-normal text-slate-400">(Optional)</span>
+                            </label>
+                            <input
+                              type="text"
+                              value={salesforceDomain}
+                              onChange={(e) => setSalesforceDomain(e.target.value)}
+                              placeholder="e.g. company.my.salesforce.com (leave blank for standard)"
+                              className="w-full px-3 py-1.5 bg-white border border-slate-300 rounded-lg text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-[#00A1E0]"
+                            />
+                          </div>
                         </div>
 
                         <button
-                          onClick={handleConnectSalesforce}
-                          disabled={salesforceStatus.loading}
-                          className="w-full py-2 px-4 bg-[#00A1E0] hover:bg-[#008bc2] text-white rounded-lg text-xs font-semibold transition-colors cursor-pointer shadow-2xs flex items-center justify-center gap-2"
+                          type="submit"
+                          disabled={sfConnecting}
+                          className="w-full py-2 px-4 bg-[#00A1E0] hover:bg-[#008bc2] disabled:opacity-60 text-white rounded-lg text-xs font-semibold transition-colors cursor-pointer shadow-2xs flex items-center justify-center gap-2"
                         >
                           <SalesforceBrandIcon className="w-4 h-4" />
-                          <span>{salesforceStatus.loading ? 'Checking...' : 'Connect Salesforce Account'}</span>
+                          <span>{sfConnecting ? 'Connecting...' : 'Connect Salesforce Organization'}</span>
                         </button>
-                      </>
+                      </form>
                     )}
                   </div>
 

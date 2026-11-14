@@ -49,6 +49,20 @@ export async function getSalesforceConnectUrl(customDomain = null) {
 }
 
 /**
+ * Direct OAuth login via Username, Password, and optional Security Token.
+ * Bypasses cross-org External Client App restrictions.
+ */
+export async function connectSalesforceDirect({ username, password, securityToken, customDomain }) {
+  const res = await apiClient.post('/api/integrations/salesforce/connect-direct', {
+    username,
+    password,
+    securityToken,
+    customDomain,
+  });
+  return res.data; // { success, message, orgId, instanceUrl }
+}
+
+/**
  * Get current Salesforce connection status for the authenticated workspace.
  * Returns { connected, orgId, instanceUrl, connectedAt } — no tokens.
  */
