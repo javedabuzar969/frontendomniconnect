@@ -35,7 +35,8 @@ apiClient.interceptors.request.use((config) => {
 apiClient.interceptors.response.use(
   (r) => r,
   (error) => {
-    if (error.response?.status === 401) {
+    // Only redirect to login if user's main session is 401 AND it's not a third-party integration login attempt
+    if (error.response?.status === 401 && !error.config?.url?.includes('/integrations/')) {
       try {
         localStorage.removeItem('__oc_token');
         sessionStorage.removeItem('__ag_jwt');
