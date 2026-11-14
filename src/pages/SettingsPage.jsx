@@ -402,7 +402,7 @@ export default function SettingsPage() {
       return;
     }
     if (channelId === 'salesforce') {
-      handleConnectSalesforce();
+      setActiveTab('salesforce');
       return;
     }
 
@@ -1484,10 +1484,10 @@ export default function SettingsPage() {
               </p>
 
               {/* Connect Button or Connected Info */}
-              <div className="mt-7 sm:mt-8 flex flex-col items-center gap-3">
+              <div className="mt-7 sm:mt-8 flex flex-col items-center gap-3 w-full">
                 {activeTab === 'salesforce' ? (
                   salesforceStatus.connected ? (
-                    <div className="flex flex-col items-center gap-3 animate-fade-in">
+                    <div className="flex flex-col items-center gap-3 animate-fade-in w-full max-w-md">
                       <div className="flex items-center gap-2 px-3.5 py-1.5 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-full text-xs font-semibold">
                         <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
                         <span>Connected to {salesforceStatus.instanceUrl ? salesforceStatus.instanceUrl.replace(/^https?:\/\//, '') : 'Salesforce CRM'}</span>
@@ -1497,10 +1497,10 @@ export default function SettingsPage() {
                       )}
                       <div className="flex gap-2">
                         <button
-                          onClick={handleConnectSalesforce}
+                          onClick={() => setSalesforceStatus((s) => ({ ...s, connected: false }))}
                           className="px-4 py-1.5 bg-white border border-slate-200 hover:border-slate-300 text-slate-700 rounded-lg text-xs font-semibold transition-all cursor-pointer shadow-xs"
                         >
-                          Re-authorize
+                          Change Org / Reconnect
                         </button>
                         <button
                           onClick={handleDisconnectSalesforce}
@@ -1511,14 +1511,103 @@ export default function SettingsPage() {
                       </div>
                     </div>
                   ) : (
-                    <button
-                      onClick={handleConnectSalesforce}
-                      disabled={salesforceStatus.loading}
-                      className="px-8 py-2.5 bg-[#00A1E0] hover:bg-[#008bc2] text-white font-semibold text-sm rounded-lg transition-all shadow-xs hover:shadow active:scale-95 cursor-pointer flex items-center gap-2"
+                    <form
+                      onSubmit={handleDirectSalesforceConnect}
+                      className="w-full max-w-md bg-slate-50/90 border border-slate-200 rounded-xl p-5 text-left space-y-3.5 animate-fade-in shadow-xs"
                     >
-                      <SalesforceBrandIcon className="w-4 h-4" />
-                      <span>{salesforceStatus.loading ? 'Checking...' : 'Connect Salesforce Account'}</span>
-                    </button>
+                      <div className="flex items-center justify-between border-b border-slate-200 pb-2.5">
+                        <span className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                          <SalesforceBrandIcon className="w-4 h-4 text-[#00A1E0]" />
+                          Connect Your Salesforce Org
+                        </span>
+                        <span className="text-[10px] bg-[#00A1E0]/10 text-[#00A1E0] font-bold px-2 py-0.5 rounded">
+                          Multi-Tenant
+                        </span>
+                      </div>
+
+                      <p className="text-[11px] text-slate-500 leading-normal">
+                        Connect any Salesforce account (Developer, Professional, Enterprise, Unlimited). Each user connects their own CRM safely.
+                      </p>
+
+                      <div>
+                        <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                          Salesforce Username <span className="text-rose-500">*</span>
+                        </label>
+                        <input
+                          type="text"
+                          required
+                          value={sfUsername}
+                          onChange={(e) => setSfUsername(e.target.value)}
+                          placeholder="user@yourcompany.com"
+                          className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-[#00A1E0]"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                          Salesforce Password <span className="text-rose-500">*</span>
+                        </label>
+                        <input
+                          type="password"
+                          required
+                          value={sfPassword}
+                          onChange={(e) => setSfPassword(e.target.value)}
+                          placeholder="Your Salesforce password"
+                          className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-[#00A1E0]"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-[11px] font-semibold text-slate-700 mb-1 flex items-center justify-between">
+                          <span>Security Token</span>
+                          <span className="text-[10px] text-slate-400 font-normal">Optional</span>
+                        </label>
+                        <input
+                          type="password"
+                          value={sfSecurityToken}
+                          onChange={(e) => setSfSecurityToken(e.target.value)}
+                          placeholder="Salesforce Security Token (if IP not whitelisted)"
+                          className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-[#00A1E0]"
+                        />
+                        <p className="text-[10px] text-slate-400 mt-1">
+                          In Salesforce: <b>Settings &rarr; Reset My Security Token</b> (emailed instantly).
+                        </p>
+                      </div>
+
+                      <div>
+                        <label className="block text-[11px] font-semibold text-slate-700 mb-1 flex items-center justify-between">
+                          <span>My Domain / Custom URL</span>
+                          <span className="text-[10px] text-slate-400 font-normal">Optional</span>
+                        </label>
+                        <input
+                          type="text"
+                          value={salesforceDomain}
+                          onChange={(e) => setSalesforceDomain(e.target.value)}
+                          placeholder="e.g. acme.my.salesforce.com (leave blank for standard)"
+                          className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-[#00A1E0]"
+                        />
+                      </div>
+
+                      <button
+                        type="submit"
+                        disabled={sfConnecting || !sfUsername.trim() || !sfPassword}
+                        className="w-full py-2.5 px-4 bg-[#00A1E0] hover:bg-[#008bc2] disabled:opacity-60 text-white rounded-lg text-xs font-bold transition-all cursor-pointer shadow-xs flex items-center justify-center gap-2 mt-2"
+                      >
+                        <SalesforceBrandIcon className="w-4 h-4" />
+                        <span>{sfConnecting ? 'Connecting...' : 'Connect Salesforce Organization'}</span>
+                      </button>
+
+                      <div className="pt-2 border-t border-slate-200/80 flex items-center justify-between text-[11px] text-slate-500">
+                        <span>App Owner / Dev Org?</span>
+                        <button
+                          type="button"
+                          onClick={handleConnectSalesforce}
+                          className="text-[#00A1E0] hover:underline font-medium cursor-pointer"
+                        >
+                          OAuth Web Pop-up &rarr;
+                        </button>
+                      </div>
+                    </form>
                   )
                 ) : channelStatus[activeTab]?.connected ? (
                   <div className="flex flex-col items-center gap-4 animate-fade-in">
@@ -2777,10 +2866,10 @@ export default function SettingsPage() {
                         )}
                         <div className="pt-2 border-t border-slate-200 flex gap-2">
                           <button
-                            onClick={handleConnectSalesforce}
+                            onClick={() => setSalesforceStatus((s) => ({ ...s, connected: false }))}
                             className="flex-1 py-1.5 px-3 bg-white hover:bg-slate-100 border border-slate-300 text-slate-700 rounded-lg text-xs font-semibold transition-colors cursor-pointer shadow-2xs"
                           >
-                            Re-authorize
+                            Change Account
                           </button>
                           <button
                             onClick={handleDisconnectSalesforce}

@@ -973,7 +973,7 @@ export default function InboxPage() {
             setMetaChannelName(ch.name);
             setShowConnectViaMetaModal(true);
           } else if (ch.id === 'salesforce') {
-            handleConnectSalesforce();
+            navigate('/settings?tab=salesforce');
           } else {
             toast.success(`${ch.name} connection initiated!`);
           }
