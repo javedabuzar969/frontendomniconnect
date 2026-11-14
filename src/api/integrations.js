@@ -36,10 +36,14 @@ export async function disconnectWhatsApp(id) {
  * Returns { oauthUrl } to open in a popup.
  * Never exposes Client Secret — all OAuth happens server-side.
  */
-export async function getSalesforceConnectUrl() {
+export async function getSalesforceConnectUrl(customDomain = null) {
+  const params = { format: 'json' };
+  if (customDomain && customDomain.trim()) {
+    params.customDomain = customDomain.trim();
+  }
   const res = await apiClient.get('/api/integrations/salesforce/connect', {
     headers: { Accept: 'application/json' },
-    params: { format: 'json' },
+    params,
   });
   return res.data; // { success, oauthUrl, state }
 }

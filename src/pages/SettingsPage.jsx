@@ -252,6 +252,7 @@ export default function SettingsPage() {
   };
 
   // Salesforce CRM State & Handlers
+  const [salesforceDomain, setSalesforceDomain] = useState('');
   const [salesforceStatus, setSalesforceStatus] = useState({
     loading: false,
     connected: false,
@@ -289,7 +290,7 @@ export default function SettingsPage() {
   const handleConnectSalesforce = async () => {
     try {
       toast.loading('Opening Salesforce authorization...', { id: 'sf-auth' });
-      const data = await getSalesforceConnectUrl();
+      const data = await getSalesforceConnectUrl(salesforceDomain);
       if (!data?.oauthUrl) {
         throw new Error(data?.error || 'Failed to generate Salesforce OAuth URL');
       }
@@ -2748,9 +2749,22 @@ export default function SettingsPage() {
                       </div>
                     ) : (
                       <>
-                        <div className="text-xs font-bold text-slate-800">Step 1</div>
+                        <div className="text-xs font-bold text-slate-800">Salesforce My Domain / Login URL</div>
                         <div className="text-xs text-slate-500">
-                          Authorize OmniConnect to securely connect to your Salesforce CRM organization.
+                          Enter your Salesforce company domain to connect your specific organization (leave empty for standard login):
+                        </div>
+
+                        <div className="space-y-1.5">
+                          <input
+                            type="text"
+                            value={salesforceDomain}
+                            onChange={(e) => setSalesforceDomain(e.target.value)}
+                            placeholder="e.g. yourcompany.my.salesforce.com"
+                            className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-[#00A1E0] focus:ring-1 focus:ring-[#00A1E0]"
+                          />
+                          <p className="text-[10px] text-slate-400">
+                            Found in your browser address bar when logged into Salesforce.
+                          </p>
                         </div>
 
                         <button
