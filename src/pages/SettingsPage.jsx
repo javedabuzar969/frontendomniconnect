@@ -301,11 +301,15 @@ export default function SettingsPage() {
     try {
       setSfConnecting(true);
       toast.loading('Connecting to your Salesforce CRM organization...', { id: 'sf-direct' });
+      let cleanDomain = salesforceDomain.trim().replace(/^https?:\/\//i, '');
+      cleanDomain = cleanDomain.split('/')[0].split('?')[0];
+      cleanDomain = cleanDomain.replace(/\.lightning\.force\.com$/i, '.my.salesforce.com');
+
       const res = await connectSalesforceDirect({
         username: sfUsername.trim(),
         password: sfPassword,
         securityToken: sfSecurityToken.trim(),
-        customDomain: salesforceDomain.trim(),
+        customDomain: cleanDomain,
       });
       toast.dismiss('sf-direct');
       if (res && res.success) {
