@@ -1492,7 +1492,13 @@ export default function SettingsPage() {
                   </div>
                 ) : (
                   <button
-                    onClick={() => handleOpenConnectModal(activeTab)}
+                    onClick={() => {
+                      if (activeTab === 'instagram') {
+                        navigate('/connect-instagram');
+                      } else {
+                        handleOpenConnectModal(activeTab);
+                      }
+                    }}
                     className="px-8 py-2.5 bg-[#0066ff] hover:bg-[#0052cc] text-white font-semibold text-sm rounded-lg transition-all shadow-xs hover:shadow active:scale-95 cursor-pointer"
                   >
                     Connect

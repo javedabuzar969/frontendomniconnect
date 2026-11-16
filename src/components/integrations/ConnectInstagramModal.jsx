@@ -1,32 +1,21 @@
-// components/integrations/ConnectInstagramModal.jsx — Proper Meta OAuth for Instagram DM
+// components/integrations/ConnectInstagramModal.jsx — Manychat-style Meta Instagram Connection Modal
 import React, { useState, useEffect } from 'react';
-import { X, Lock, RotateCw, ChevronDown, Check, Loader2, AlertCircle, Users } from 'lucide-react';
+import {
+  X,
+  Check,
+  Loader2,
+  AlertCircle,
+  Users,
+  ChevronDown,
+  ShieldCheck,
+  ExternalLink,
+} from 'lucide-react';
+import { InstagramIllustration } from '../ui/ChannelIllustrations';
 import { apiClient } from '../../api/client';
 import toast from 'react-hot-toast';
 
-// Official Instagram Camera Icon with gradient
-export function InstagramCameraIcon({ className = 'w-5 h-5' }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="none">
-      <defs>
-        <radialGradient id="ig-pill-grad" cx="20%" cy="100%" r="150%">
-          <stop offset="0%" stopColor="#fdf497" />
-          <stop offset="5%" stopColor="#fdf497" />
-          <stop offset="45%" stopColor="#fd5949" />
-          <stop offset="60%" stopColor="#d6249f" />
-          <stop offset="90%" stopColor="#285AEB" />
-        </radialGradient>
-      </defs>
-      <rect width="24" height="24" rx="6" fill="url(#ig-pill-grad)" />
-      <rect x="5.5" y="5.5" width="13" height="13" rx="3.5" stroke="#ffffff" strokeWidth="1.8" />
-      <circle cx="12" cy="12" r="3.2" stroke="#ffffff" strokeWidth="1.8" />
-      <circle cx="15.8" cy="8.2" r="0.9" fill="#ffffff" />
-    </svg>
-  );
-}
-
-// Official Meta Blue Infinity Loop Logo
-export function MetaInfinityLogo({ className = 'w-6 h-6' }) {
+// ─── Official Meta Blue Infinity Loop Logo ──────────────────────────────────
+export function MetaInfinityLogo({ className = 'w-5 h-5' }) {
   return (
     <svg className={className} viewBox="0 0 36 36" fill="none">
       <path
@@ -37,32 +26,25 @@ export function MetaInfinityLogo({ className = 'w-6 h-6' }) {
   );
 }
 
-// Instagram Cursive Script Logo
-export function InstagramScriptWordmark({ className = 'h-11' }) {
+// ─── Instagram Camera Icon with Gradient ────────────────────────────────────
+export function InstagramCameraIcon({ className = 'w-5 h-5' }) {
   return (
-    <div className={`flex items-center justify-center ${className}`}>
-      <span
-        style={{
-          fontFamily: "'Brush Script MT', 'Grand Hotel', 'Billabong', cursive, sans-serif",
-          fontSize: '44px',
-          fontWeight: '500',
-          letterSpacing: '-1px',
-          color: '#262626',
-        }}
-      >
-        Instagram
-      </span>
-    </div>
+    <svg className={className} viewBox="0 0 24 24" fill="none">
+      <defs>
+        <radialGradient id="ig-cam-grad" cx="20%" cy="100%" r="150%">
+          <stop offset="0%" stopColor="#fdf497" />
+          <stop offset="45%" stopColor="#fd5949" />
+          <stop offset="60%" stopColor="#d6249f" />
+          <stop offset="90%" stopColor="#285AEB" />
+        </radialGradient>
+      </defs>
+      <rect width="24" height="24" rx="6" fill="url(#ig-cam-grad)" />
+      <rect x="5.5" y="5.5" width="13" height="13" rx="3.5" stroke="#ffffff" strokeWidth="1.8" />
+      <circle cx="12" cy="12" r="3.2" stroke="#ffffff" strokeWidth="1.8" />
+      <circle cx="15.8" cy="8.2" r="0.9" fill="#ffffff" />
+    </svg>
   );
 }
-
-// ── STEPS ───────────────────────────────────────────────────────────────────
-// 'intro'      → Step 1: Show "Connect with Instagram" button
-// 'waiting'    → Step 2: OAuth popup open, waiting for postMessage
-// 'accounts'   → Step 3: Show found Instagram accounts, user selects one
-// 'connecting' → Step 4: Connecting selected account
-// 'success'    → Step 5: Connected!
-// 'error'      → Error state
 
 export default function ConnectInstagramModal({
   isOpen,
@@ -77,22 +59,19 @@ export default function ConnectInstagramModal({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [connectedAccount, setConnectedAccount] = useState(null);
+  const [showMoreOptions, setShowMoreOptions] = useState(false);
 
-  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
-
-  // Listen for popup postMessage from OAuth callback
+  // Listen for popup postMessage from Meta OAuth callback
   useEffect(() => {
     function handleMessage(event) {
       if (event.data?.type === 'IG_AUTH_SUCCESS' || event.data?.type === 'META_AUTH_SUCCESS') {
         const receivedState = event.data.state;
-        const igCount = event.data.igCount || event.data.pagesCount || 0;
-        console.log('[Instagram OAuth] Popup success:', receivedState, 'accounts:', igCount);
         if (receivedState) {
           setOauthState(receivedState);
           fetchInstagramAccounts(receivedState);
         }
       } else if (event.data?.type === 'IG_AUTH_ERROR' || event.data?.type === 'META_AUTH_ERROR') {
-        setError(`Instagram authorization failed: ${event.data.error || 'cancelled'}`);
+        setError(`Meta authorization failed: ${event.data.error || 'cancelled'}`);
         setStep('error');
       }
     }
@@ -100,21 +79,9 @@ export default function ConnectInstagramModal({
     return () => window.removeEventListener('message', handleMessage);
   }, []);
 
-  // Also handle URL params when redirected (non-popup fallback)
-  useEffect(() => {
-    if (!isOpen && !isFullScreen) return;
-    const params = new URLSearchParams(window.location.search);
-    const state = params.get('state');
-    const oauth = params.get('oauth');
-    if (state && oauth === 'success') {
-      setOauthState(state);
-      fetchInstagramAccounts(state);
-    }
-  }, [isOpen, isFullScreen]);
-
   if (!isOpen && !isFullScreen) return null;
 
-  // Step 1: Start Instagram OAuth via backend
+  // Launch Meta OAuth popup (Connect Via Meta)
   const handleStartOAuth = async () => {
     setLoading(true);
     setError(null);
@@ -123,19 +90,20 @@ export default function ConnectInstagramModal({
         params: { format: 'json' },
       });
 
-      let { oauthUrl, state } = res.data;
+      const { oauthUrl, state } = res.data || {};
+      if (!oauthUrl) throw new Error('No OAuth URL returned');
+
       setOauthState(state);
-      // Save state to sessionStorage so we can recover it if postMessage is lost
       sessionStorage.setItem('ig_oauth_state', state);
 
-      const width = 600;
-      const height = 750;
+      const width = 640;
+      const height = 760;
       const left = window.screen.width / 2 - width / 2;
       const top = window.screen.height / 2 - height / 2;
 
       const popup = window.open(
         oauthUrl,
-        'InstagramMetaOAuth',
+        'MetaInstagramOAuth',
         `width=${width},height=${height},top=${top},left=${left},scrollbars=yes,status=1`
       );
 
@@ -146,29 +114,28 @@ export default function ConnectInstagramModal({
 
       setStep('waiting');
 
-      // Watch for popup close — if popup closes but postMessage was missed, auto-fetch
       const checkClosed = setInterval(() => {
         if (popup.closed) {
           clearInterval(checkClosed);
-          // Only auto-fetch if still in waiting step
           setStep((currentStep) => {
             if (currentStep === 'waiting') {
               const savedState = sessionStorage.getItem('ig_oauth_state');
               if (savedState) fetchInstagramAccounts(savedState);
+              return 'intro';
             }
             return currentStep;
           });
         }
-      }, 800);
+      }, 900);
     } catch (err) {
-      setError('Failed to start Instagram OAuth: ' + (err.response?.data?.error || err.message));
+      setError('Failed to start Meta authorization: ' + (err.response?.data?.error || err.message));
       setStep('error');
     } finally {
       setLoading(false);
     }
   };
 
-  // Step 2→3: Fetch Instagram accounts after OAuth
+  // Fetch Instagram accounts from Meta
   const fetchInstagramAccounts = async (state) => {
     setStep('waiting');
     try {
@@ -176,8 +143,7 @@ export default function ConnectInstagramModal({
         params: { state },
       });
 
-      const accounts = res.data.igAccounts || [];
-
+      const accounts = res.data?.igAccounts || [];
       if (accounts.length === 0) {
         setError(
           'No Instagram Professional accounts found linked to your Facebook Pages.\n\n' +
@@ -196,27 +162,33 @@ export default function ConnectInstagramModal({
     }
   };
 
-  // Step 3→4: Connect selected Instagram account
-  const handleConnectAccount = async () => {
-    if (!selectedAccount) return;
+  // Connect selected Instagram account
+  const handleConnectAccount = async (accountToConnect) => {
+    const acc = accountToConnect || selectedAccount;
+    if (!acc) return;
+
     setLoading(true);
     setStep('connecting');
     setError(null);
 
     try {
       const res = await apiClient.post('/api/integrations/facebook/instagram/connect-account', {
-        igUserId: selectedAccount.igUserId,
+        igUserId: acc.igUserId,
         state: oauthState,
       });
 
-      setConnectedAccount(res.data.account);
+      const connected = res.data?.account || acc;
+      setConnectedAccount(connected);
+
       localStorage.setItem('omni_instagram_connected', 'true');
-      localStorage.setItem('omni_instagram_account', `@${selectedAccount.igUsername}`);
-      toast.success(`🎉 Instagram @${selectedAccount.igUsername} connected!`);
+      localStorage.setItem('omni_instagram_account', `@${acc.igUsername}`);
+      if (acc.pageId) localStorage.setItem('omni_instagram_page_id', acc.pageId);
+      if (acc.igUserId) localStorage.setItem('omni_instagram_ig_id', acc.igUserId);
+
+      toast.success(`🎉 Instagram @${acc.igUsername} connected!`);
       setStep('success');
     } catch (err) {
-      const msg = err.response?.data?.error || err.message;
-      setError('Failed to connect: ' + msg);
+      setError('Failed to connect: ' + (err.response?.data?.error || err.message));
       setStep('error');
     } finally {
       setLoading(false);
@@ -236,275 +208,295 @@ export default function ConnectInstagramModal({
       className={`bg-white ${
         isFullScreen
           ? 'min-h-screen w-full'
-          : 'rounded-2xl shadow-2xl w-full max-w-[540px] sm:max-w-[580px] min-h-[580px]'
-      } overflow-hidden flex flex-col border border-slate-200 animate-in zoom-in-95 duration-200 select-none relative`}
+          : 'rounded-2xl shadow-2xl w-full max-w-[500px] min-h-[520px]'
+      } overflow-hidden flex flex-col border border-slate-200 animate-in zoom-in-95 duration-200 select-none relative p-6 sm:p-8`}
     >
-      {/* ── Chrome Window Header ── */}
-      <div className="bg-[#dee1e6] border-b border-[#c8ccd3] px-3 pt-2 pb-2.5 flex flex-col gap-2">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2 max-w-[85%]">
-            <div className="flex items-center gap-1.5 px-3 py-1 bg-white rounded-t-lg text-[11px] text-slate-700 font-medium shadow-2xs truncate">
-              <InstagramCameraIcon className="w-3.5 h-3.5 shrink-0" />
-              <span className="truncate">
-                {step === 'success'
-                  ? 'Instagram Connected ✓'
-                  : step === 'accounts'
-                  ? `Instagram — ${igAccounts.length} account(s) found`
-                  : '(4) Instagram — Google Chrome'}
-              </span>
+      {/* Clean Close Button in Top-Right */}
+      {!isFullScreen && onClose && (
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-4 w-8 h-8 rounded-full hover:bg-slate-100 flex items-center justify-center text-slate-400 hover:text-slate-700 transition-colors cursor-pointer z-10"
+          title="Close"
+        >
+          <X size={18} />
+        </button>
+      )}
+
+      {/* ── INTRO STEP: Exact Match to Manychat Reference ── */}
+      {step === 'intro' && (
+        <div className="flex-1 flex flex-col justify-between space-y-6 animate-fade-in">
+          {/* Top Graphic + Heading */}
+          <div className="text-center pt-2">
+            <div className="flex justify-center mb-3 transform hover:scale-105 transition-transform duration-300">
+              <InstagramIllustration className="w-28 h-28" />
             </div>
+
+            <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">
+              Connect Instagram
+            </h1>
+            <p className="text-xs sm:text-sm text-slate-500 mt-1 max-w-xs mx-auto leading-relaxed">
+              Use your Instagram account to connect to OmniConnect.
+            </p>
           </div>
-          <div className="flex items-center gap-2">
-            {!isFullScreen && onClose && (
-              <button
-                onClick={onClose}
-                className="w-5 h-5 rounded-full hover:bg-slate-300 flex items-center justify-center text-slate-600 hover:text-black transition-colors cursor-pointer"
-                title="Close"
-              >
-                <X size={13} />
-              </button>
-            )}
-          </div>
-        </div>
-        <div className="flex items-center gap-2 bg-white rounded-full px-3 py-1 border border-[#c1c5cd] text-xs text-slate-600 shadow-2xs">
-          <Lock size={12} className="text-emerald-600 shrink-0" />
-          <span className="truncate flex-1 font-mono text-[11px] text-slate-700 select-text">
-            instagram.com/oauth/oidc/?redirect_uri=https%3A%2F%2Fbusiness.facebook.com...
-          </span>
-          <RotateCw size={12} className="text-slate-400 shrink-0" />
-        </div>
-      </div>
 
-      {/* ── Body ── */}
-      <div className="flex-1 flex flex-col overflow-y-auto">
-
-        {/* INTRO STEP */}
-        {step === 'intro' && (
-          <div className="flex-1 flex flex-col justify-center items-center p-8 sm:p-14 bg-white text-center">
-            <div className="w-full max-w-[380px] flex flex-col items-center">
-              <h1 className="text-xl sm:text-[23px] font-bold text-[#1c2b33] tracking-tight leading-snug mb-3">
-                Connect Instagram DMs
-              </h1>
-              <p className="text-sm text-slate-500 mb-9 max-w-[300px] leading-relaxed">
-                Receive and reply to Instagram Direct Messages from your inbox. Requires a Business or Creator account linked to a Facebook Page.
-              </p>
-
-              <button
-                onClick={handleStartOAuth}
-                disabled={loading}
-                className="w-full py-2.5 px-6 bg-white hover:bg-slate-50 active:bg-slate-100 border border-[#dadde1] hover:border-slate-400 text-[#1c1e21] font-semibold text-sm rounded-full transition-all shadow-2xs flex items-center justify-center gap-3 cursor-pointer group hover:shadow-xs active:scale-[0.99] disabled:opacity-70"
-              >
-                {loading ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <InstagramCameraIcon className="w-5 h-5 shrink-0 transition-transform group-hover:scale-105" />
-                )}
-                <span className="tracking-tight">Continue with Instagram</span>
-              </button>
-
-              <div className="mt-7 flex items-center justify-center gap-1.5 text-[#1c2b33] font-bold text-sm">
-                <MetaInfinityLogo className="w-5 h-5" />
-                <span className="tracking-tight">Meta</span>
-              </div>
-
-              <p className="text-[11px] text-slate-400 mt-10 max-w-[280px] leading-relaxed">
-                You'll be redirected to Meta's official login. OmniConnect never stores your Instagram password.
-              </p>
-            </div>
-          </div>
-        )}
-
-        {/* WAITING STEP */}
-        {step === 'waiting' && (
-          <div className="flex-1 flex flex-col justify-center items-center p-8 text-center gap-5">
-            <div className="w-14 h-14 rounded-full bg-gradient-to-br from-[#f9ce34] via-[#ee2a7b] to-[#6228d7] flex items-center justify-center">
-              <Loader2 className="w-6 h-6 text-white animate-spin" />
-            </div>
+          {/* Action Box: "A few steps in" + "Connect Via Meta" */}
+          <div className="space-y-4">
             <div>
-              <h3 className="text-base font-bold text-slate-900 mb-1">Waiting for Instagram authorization...</h3>
-              <p className="text-sm text-slate-500">Complete the login in the popup window that opened.</p>
+              <h2 className="text-sm font-bold text-slate-900 tracking-tight">
+                A few steps in
+              </h2>
+              <p className="text-xs text-slate-500 mt-1 leading-relaxed">
+                We'll take you to Meta to connect. Just set your permissions, and your Instagram account will be linked to OmniConnect.
+              </p>
             </div>
 
-            {/* Manual fetch button — in case postMessage was missed */}
-            {oauthState && (
-              <button
-                onClick={() => fetchInstagramAccounts(oauthState)}
-                className="px-5 py-2.5 bg-[#E1306C] hover:bg-[#c1265c] text-white font-semibold text-sm rounded-xl transition-all cursor-pointer flex items-center gap-2"
-              >
-                <Check className="w-4 h-4" />
-                I've already logged in → Fetch my accounts
-              </button>
-            )}
+            <button
+              onClick={handleStartOAuth}
+              disabled={loading}
+              className="w-full py-3 bg-[#0066ff] hover:bg-[#0052cc] active:bg-[#0047b3] text-white font-semibold rounded-xl text-xs sm:text-sm transition-all shadow-sm hover:shadow active:scale-[0.99] cursor-pointer flex items-center justify-center gap-2"
+            >
+              {loading ? (
+                <>
+                  <Loader2 size={16} className="animate-spin" />
+                  <span>Opening Meta...</span>
+                </>
+              ) : (
+                <span>Connect Via Meta</span>
+              )}
+            </button>
 
+            {/* Meta Business Partner Trust Badge (Exact Manychat styling) */}
+            <div className="bg-[#f8fafc] border border-slate-200/90 rounded-xl p-3.5 flex items-center justify-between shadow-2xs">
+              <div className="text-[11px] text-slate-600 font-medium max-w-[200px] leading-snug">
+                OmniConnect is a trusted Meta Business Partner
+              </div>
+              <div className="flex items-center gap-1.5 text-slate-800">
+                <MetaInfinityLogo className="w-5 h-5 text-[#0064E0]" />
+                <div className="text-left">
+                  <span className="block font-bold text-[11px] leading-none text-slate-900">Meta</span>
+                  <span className="text-[9px] text-slate-500 font-medium tracking-tight">Business Partner</span>
+                </div>
+              </div>
+            </div>
+
+            {/* See More Options Toggle */}
+            <div className="pt-1 text-center">
+              <button
+                type="button"
+                onClick={() => setShowMoreOptions((v) => !v)}
+                className="text-xs text-[#0066ff] hover:underline cursor-pointer inline-flex items-center gap-1 font-medium"
+              >
+                <span>See More Options</span>
+                <ChevronDown
+                  size={14}
+                  className={`transition-transform duration-200 ${showMoreOptions ? 'rotate-180' : ''}`}
+                />
+              </button>
+
+              {showMoreOptions && (
+                <div className="mt-3 p-3 bg-slate-50 border border-slate-200 rounded-xl text-left text-xs text-slate-600 space-y-1.5 animate-fade-in">
+                  <div className="font-semibold text-slate-800 flex items-center gap-1.5">
+                    <ShieldCheck size={14} className="text-[#0066ff]" />
+                    <span>Requirements for Instagram:</span>
+                  </div>
+                  <ul className="list-disc pl-4 space-y-1 text-[11px] text-slate-500 leading-relaxed">
+                    <li>Must be an Instagram <b>Business or Creator</b> account.</li>
+                    <li>Connected to a <b>Facebook Page</b> you manage.</li>
+                    <li>In Instagram app: <i>Settings &rarr; Privacy &rarr; Messages &rarr; Allow Access</i>.</li>
+                  </ul>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── WAITING STEP ── */}
+      {step === 'waiting' && (
+        <div className="flex-1 flex flex-col justify-center items-center text-center p-6 space-y-5 animate-fade-in">
+          <div className="relative w-16 h-16 mx-auto flex items-center justify-center">
+            <div className="absolute inset-0 rounded-full border-2 border-[#0066ff]/20 border-t-[#0066ff] animate-spin" />
+            <MetaInfinityLogo className="w-8 h-8 text-[#0064E0]" />
+          </div>
+
+          <div>
+            <h3 className="text-base font-bold text-slate-900">Connecting with Meta...</h3>
+            <p className="text-xs text-slate-500 mt-1 max-w-xs mx-auto leading-relaxed">
+              Please complete the authorization in the Meta popup window and grant permissions to your Instagram account.
+            </p>
+          </div>
+
+          <div className="flex gap-2 w-full pt-2">
+            <button
+              onClick={handleStartOAuth}
+              className="flex-1 py-2.5 bg-white border border-slate-300 hover:border-slate-400 text-slate-700 text-xs font-semibold rounded-xl transition-all cursor-pointer shadow-2xs"
+            >
+              Re-open Meta Window
+            </button>
             <button
               onClick={handleReset}
-              className="text-xs text-slate-400 hover:text-slate-600 underline cursor-pointer"
+              className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs font-semibold rounded-xl transition-all cursor-pointer"
             >
-              Cancel and try again
+              Cancel
             </button>
-          </div>
-        )}
-
-
-        {/* ACCOUNTS STEP */}
-        {step === 'accounts' && (
-          <div className="flex-1 flex flex-col p-6 sm:p-8 bg-white">
-            <div className="w-full max-w-[400px] mx-auto">
-              <div className="mb-6 text-center">
-                <InstagramScriptWordmark />
-                <h3 className="text-base font-bold text-slate-900 mt-2">
-                  Select Instagram Account
-                </h3>
-                <p className="text-xs text-slate-500 mt-1">
-                  {igAccounts.length} account{igAccounts.length !== 1 ? 's' : ''} found linked to your Facebook Pages
-                </p>
-              </div>
-
-              <div className="space-y-3 mb-6">
-                {igAccounts.map((acc) => (
-                  <button
-                    key={acc.igUserId}
-                    onClick={() => setSelectedAccount(acc)}
-                    className={`w-full flex items-center gap-3 p-3.5 rounded-xl border-2 transition-all cursor-pointer text-left ${
-                      selectedAccount?.igUserId === acc.igUserId
-                        ? 'border-[#E1306C] bg-pink-50'
-                        : 'border-slate-200 hover:border-slate-300 bg-white'
-                    }`}
-                  >
-                    {acc.igProfilePicture ? (
-                      <img
-                        src={acc.igProfilePicture}
-                        alt={acc.igUsername}
-                        className="w-10 h-10 rounded-full object-cover shrink-0"
-                      />
-                    ) : (
-                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#f9ce34] via-[#ee2a7b] to-[#6228d7] flex items-center justify-center shrink-0">
-                        <span className="text-white font-bold text-sm">
-                          {(acc.igUsername || '?')[0].toUpperCase()}
-                        </span>
-                      </div>
-                    )}
-                    <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-slate-900 text-sm truncate">@{acc.igUsername}</p>
-                      <p className="text-xs text-slate-500 truncate">
-                        Linked to: {acc.linkedPageName}
-                      </p>
-                      {acc.igFollowers > 0 && (
-                        <p className="text-xs text-slate-400 flex items-center gap-1 mt-0.5">
-                          <Users size={10} />
-                          {acc.igFollowers.toLocaleString()} followers
-                        </p>
-                      )}
-                    </div>
-                    {selectedAccount?.igUserId === acc.igUserId && (
-                      <Check className="w-5 h-5 text-[#E1306C] shrink-0" />
-                    )}
-                  </button>
-                ))}
-              </div>
-
-              <button
-                onClick={handleConnectAccount}
-                disabled={!selectedAccount || loading}
-                className="w-full py-2.5 px-4 bg-[#E1306C] hover:bg-[#c1265c] active:bg-[#a81f4e] text-white font-semibold text-sm rounded-xl transition-all shadow-xs flex items-center justify-center gap-2 cursor-pointer disabled:opacity-70"
-              >
-                {loading ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <>
-                    <InstagramCameraIcon className="w-4 h-4" />
-                    Connect @{selectedAccount?.igUsername || 'account'}
-                  </>
-                )}
-              </button>
-
-              <button
-                onClick={onClose}
-                className="w-full mt-2.5 py-2.5 px-4 bg-slate-100 hover:bg-slate-200 text-slate-800 font-semibold text-sm rounded-xl transition-all cursor-pointer"
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* CONNECTING STEP */}
-        {step === 'connecting' && (
-          <div className="flex-1 flex flex-col justify-center items-center p-8 text-center gap-5">
-            <div className="w-14 h-14 rounded-full bg-gradient-to-br from-[#f9ce34] via-[#ee2a7b] to-[#6228d7] flex items-center justify-center">
-              <Loader2 className="w-6 h-6 text-white animate-spin" />
-            </div>
-            <div>
-              <h3 className="text-base font-bold text-slate-900 mb-1">Connecting Instagram...</h3>
-              <p className="text-sm text-slate-500">Subscribing to DM webhooks and saving account.</p>
-            </div>
-          </div>
-        )}
-
-        {/* SUCCESS STEP */}
-        {step === 'success' && (
-          <div className="flex-1 flex flex-col justify-center items-center p-8 text-center gap-5">
-            <div className="w-16 h-16 rounded-full bg-gradient-to-br from-[#f9ce34] via-[#ee2a7b] to-[#6228d7] flex items-center justify-center">
-              <Check className="w-8 h-8 text-white" strokeWidth={3} />
-            </div>
-            <div>
-              <h3 className="text-lg font-bold text-slate-900 mb-1">Instagram Connected! 🎉</h3>
-              <p className="text-sm text-slate-500">
-                @{connectedAccount?.igUsername || selectedAccount?.igUsername} is now connected.
-                <br />You'll receive DMs in your inbox.
-              </p>
-            </div>
-            <button
-              onClick={() => { onSuccess?.(); onClose?.(); }}
-              className="px-6 py-2.5 bg-[#E1306C] hover:bg-[#c1265c] text-white font-semibold text-sm rounded-xl transition-all cursor-pointer"
-            >
-              Go to Inbox
-            </button>
-          </div>
-        )}
-
-        {/* ERROR STEP */}
-        {step === 'error' && (
-          <div className="flex-1 flex flex-col justify-center items-center p-8 text-center gap-4">
-            <div className="w-14 h-14 rounded-full bg-red-100 flex items-center justify-center">
-              <AlertCircle className="w-7 h-7 text-red-500" />
-            </div>
-            <div>
-              <h3 className="text-base font-bold text-slate-900 mb-2">Connection Failed</h3>
-              <p className="text-sm text-slate-500 whitespace-pre-line max-w-[320px] leading-relaxed">
-                {error}
-              </p>
-            </div>
-            <div className="flex gap-3 mt-2">
-              <button
-                onClick={handleReset}
-                className="px-5 py-2 bg-[#E1306C] hover:bg-[#c1265c] text-white font-semibold text-sm rounded-xl transition-all cursor-pointer"
-              >
-                Try Again
-              </button>
-              <button
-                onClick={onClose}
-                className="px-5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-sm rounded-xl transition-all cursor-pointer"
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* Footer */}
-        <div className="px-6 py-4 border-t border-slate-100 text-center text-[10px] text-slate-400">
-          <div className="flex flex-wrap justify-center gap-x-3 gap-y-1">
-            {['Meta', 'About', 'Blog', 'Help', 'API', 'Privacy', 'Terms', 'Instagram Lite', 'Meta Verified'].map((link) => (
-              <span key={link} className="hover:underline cursor-pointer">{link}</span>
-            ))}
-          </div>
-          <div className="flex items-center justify-center gap-3 mt-1.5 text-slate-300">
-            <span className="flex items-center gap-1 cursor-pointer">English <ChevronDown size={9} /></span>
-            <span>© 2026 Instagram from Meta</span>
           </div>
         </div>
-      </div>
+      )}
+
+      {/* ── ACCOUNTS STEP ── */}
+      {step === 'accounts' && (
+        <div className="flex-1 flex flex-col justify-between space-y-4 animate-fade-in">
+          <div>
+            <span className="px-2 py-0.5 bg-emerald-100 text-emerald-800 text-[10px] font-bold rounded-full uppercase tracking-wide">
+              Meta Authorized
+            </span>
+            <h2 className="text-base font-bold text-slate-900 mt-1.5">
+              Select Instagram Account
+            </h2>
+            <p className="text-xs text-slate-500 leading-relaxed">
+              Choose the Instagram account you want to connect to OmniConnect:
+            </p>
+          </div>
+
+          <div className="space-y-2.5 max-h-[260px] overflow-y-auto pr-1">
+            {igAccounts.map((acc) => (
+              <div
+                key={acc.igUserId}
+                onClick={() => setSelectedAccount(acc)}
+                className={`p-3 rounded-xl border transition-all cursor-pointer flex items-center justify-between gap-3 ${
+                  selectedAccount?.igUserId === acc.igUserId
+                    ? 'border-[#0066ff] bg-[#f0f6ff] shadow-xs'
+                    : 'border-slate-200 hover:border-slate-300 bg-white'
+                }`}
+              >
+                <div className="flex items-center gap-2.5 min-w-0">
+                  {acc.profilePic ? (
+                    <img
+                      src={acc.profilePic}
+                      alt={acc.igUsername}
+                      className="w-9 h-9 rounded-full object-cover border border-slate-200 shrink-0"
+                    />
+                  ) : (
+                    <div className="w-9 h-9 rounded-full bg-linear-to-tr from-[#fdf497] via-[#fd5949] to-[#d6249f] flex items-center justify-center text-white shrink-0">
+                      <InstagramCameraIcon className="w-5 h-5" />
+                    </div>
+                  )}
+                  <div className="min-w-0">
+                    <div className="text-xs font-bold text-slate-900 truncate">
+                      @{acc.igUsername}
+                    </div>
+                    {acc.pageName && (
+                      <div className="text-[11px] text-slate-500 truncate">
+                        Linked: {acc.pageName}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleConnectAccount(acc);
+                  }}
+                  disabled={loading}
+                  className="px-3 py-1.5 bg-[#0066ff] hover:bg-[#0052cc] text-white rounded-lg text-xs font-semibold shrink-0 cursor-pointer shadow-2xs"
+                >
+                  Connect
+                </button>
+              </div>
+            ))}
+          </div>
+
+          <button
+            onClick={() => handleConnectAccount(selectedAccount)}
+            disabled={!selectedAccount || loading}
+            className="w-full py-2.5 bg-[#0066ff] hover:bg-[#0052cc] disabled:opacity-50 text-white font-semibold rounded-xl text-xs sm:text-sm transition-all shadow-sm cursor-pointer"
+          >
+            Connect @{selectedAccount?.igUsername || 'Selected Account'}
+          </button>
+        </div>
+      )}
+
+      {/* ── CONNECTING STEP ── */}
+      {step === 'connecting' && (
+        <div className="flex-1 flex flex-col justify-center items-center text-center p-6 space-y-4 animate-fade-in">
+          <Loader2 className="w-10 h-10 text-[#0066ff] animate-spin mx-auto" />
+          <div>
+            <h3 className="text-sm font-bold text-slate-900">
+              Connecting @{selectedAccount?.igUsername}...
+            </h3>
+            <p className="text-xs text-slate-500 mt-1">
+              Subscribing DM webhooks and configuring unified inbox...
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* ── SUCCESS STEP ── */}
+      {step === 'success' && (
+        <div className="flex-1 flex flex-col justify-center items-center text-center p-6 space-y-4 animate-fade-in">
+          <div className="w-14 h-14 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto shadow-xs">
+            <Check size={28} strokeWidth={2.5} />
+          </div>
+
+          <div>
+            <h3 className="text-lg font-extrabold text-slate-900 tracking-tight">
+              Instagram Connected! 🎉
+            </h3>
+            <p className="text-xs text-slate-500 mt-1">
+              Your Instagram account{' '}
+              <span className="font-bold text-slate-800">
+                @{connectedAccount?.igUsername || selectedAccount?.igUsername}
+              </span>{' '}
+              is now live in OmniConnect.
+            </p>
+          </div>
+
+          <div className="w-full flex gap-2 pt-2">
+            <button
+              onClick={() => {
+                onSuccess?.();
+                onClose?.();
+              }}
+              className="w-full py-2.5 bg-[#0066ff] hover:bg-[#0052cc] text-white rounded-xl text-xs font-semibold cursor-pointer shadow-2xs"
+            >
+              Done
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ── ERROR STEP ── */}
+      {step === 'error' && (
+        <div className="flex-1 flex flex-col justify-center items-center text-center p-6 space-y-4 animate-fade-in">
+          <div className="w-12 h-12 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center mx-auto">
+            <AlertCircle size={24} />
+          </div>
+
+          <div>
+            <h3 className="text-sm font-bold text-slate-900">Connection Failed</h3>
+            <p className="text-xs text-slate-500 mt-1 max-w-xs mx-auto leading-relaxed whitespace-pre-line">
+              {error}
+            </p>
+          </div>
+
+          <div className="w-full flex gap-2 pt-2">
+            <button
+              onClick={handleReset}
+              className="flex-1 py-2.5 bg-[#0066ff] hover:bg-[#0052cc] text-white rounded-xl text-xs font-semibold cursor-pointer shadow-2xs"
+            >
+              Try Again
+            </button>
+            <button
+              onClick={onClose}
+              className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-semibold cursor-pointer"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 
@@ -513,7 +505,9 @@ export default function ConnectInstagramModal({
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/60 backdrop-blur-[2px] animate-in fade-in duration-200"
-      onClick={(e) => { if (e.target === e.currentTarget && onClose) onClose(); }}
+      onClick={(e) => {
+        if (e.target === e.currentTarget && onClose) onClose();
+      }}
     >
       {modalBody}
     </div>
