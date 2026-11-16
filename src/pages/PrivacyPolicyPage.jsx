@@ -301,7 +301,7 @@ export default function PrivacyPolicyPage() {
           </h2>
           <div className="text-sm text-slate-600 leading-relaxed space-y-4">
             <p>
-              In compliance with the Meta Platform Terms, users have full control over their Meta account data connected to OmniConnect (Meta App ID: <code className="font-mono text-xs bg-slate-100 px-1.5 py-0.5 rounded">1805149667346137</code>).
+              In compliance with the Meta Platform Terms, users have full control over their Meta account data connected to OmniConnect (Meta App ID: <code className="font-mono text-xs bg-slate-100 px-1.5 py-0.5 rounded">1716326016812279</code>).
             </p>
 
             <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-3">

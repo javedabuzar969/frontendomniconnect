@@ -19,7 +19,7 @@ export default function DataDeletionPage() {
   const [identifier, setIdentifier] = useState('');
   const [copied, setCopied] = useState(false);
 
-  const metaAppId = '1805149667346137';
+  const metaAppId = '1716326016812279';
 
   const sampleEmailBody = `Subject: OmniConnect User Data Deletion Request
 
