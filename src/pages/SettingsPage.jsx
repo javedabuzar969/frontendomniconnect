@@ -351,7 +351,7 @@ export default function SettingsPage() {
 
   const handleOpenConnectModal = (channelId) => {
     if (channelId === 'instagram') {
-      setShowInstagramModal(true);
+      navigate('/connect-instagram');
       return;
     }
     if (channelId === 'messenger') {

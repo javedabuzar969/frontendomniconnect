@@ -968,7 +968,7 @@ export default function InboxPage() {
           if (ch.id === 'facebook') {
             navigate('/connect-facebook');
           } else if (ch.id === 'instagram') {
-            setShowConnectInstagramModal(true);
+            navigate('/connect-instagram');
           } else if (ch.id === 'whatsapp') {
             setMetaChannelName(ch.name);
             setShowConnectViaMetaModal(true);
