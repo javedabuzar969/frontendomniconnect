@@ -225,7 +225,10 @@ export default function ConnectFacebookPage() {
     try {
       const res = await apiClient.get('/api/integrations/facebook/pages');
       if (res.data?.success) {
-        const connected = res.data.connectedPages || [];
+        const rawConnected = res.data.connectedPages || [];
+        const connected = rawConnected.filter(
+          (p) => !p.pageId?.startsWith('ig_') && !p.id?.startsWith('ig_') && p.category !== 'Instagram'
+        );
         setConnectedPages(connected);
         if (connected.length > 0) {
           setHasAuthorized(true);
@@ -247,8 +250,14 @@ export default function ConnectFacebookPage() {
         params: { state },
       });
       if (res.data?.success) {
-        const pages = res.data.availablePages || res.data.pages || [];
-        const connected = res.data.connectedPages || [];
+        const rawPages = res.data.availablePages || res.data.pages || [];
+        const rawConnected = res.data.connectedPages || [];
+        const pages = rawPages.filter(
+          (p) => !p.pageId?.startsWith('ig_') && !p.id?.startsWith('ig_') && p.category !== 'Instagram'
+        );
+        const connected = rawConnected.filter(
+          (p) => !p.pageId?.startsWith('ig_') && !p.id?.startsWith('ig_') && p.category !== 'Instagram'
+        );
         setAvailablePages(pages);
         setConnectedPages(connected);
         if (pages.length > 0 || connected.length > 0) {
