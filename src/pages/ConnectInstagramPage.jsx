@@ -11,8 +11,11 @@ import {
   RefreshCw,
   ExternalLink,
   Users,
+  HelpCircle,
+  ArrowRight,
 } from 'lucide-react';
 import { InstagramIllustration } from '../components/ui/ChannelIllustrations';
+import { MessengerBrandIcon, InstagramIcon } from '../components/ui/Icons';
 import { apiClient } from '../api/client';
 import toast from 'react-hot-toast';
 
@@ -48,22 +51,169 @@ function InstagramGradientIcon({ className = 'w-5 h-5' }) {
   );
 }
 
-// ─── Confetti Particles (Manychat celebration) ──────────────────────────────
-const CONFETTI = Array.from({ length: 60 }, (_, i) => ({
+// ─── Confetti config: 70 particles matching Manychat reference ───────────────
+const COLORS = [
+  '#0066ff', '#f59e0b', '#10b981', '#ef4444', '#8b5cf6',
+  '#ec4899', '#06b6d4', '#ea580c', '#1e293b', '#f43f5e',
+  '#84cc16', '#a855f7', '#fbbf24', '#34d399', '#60a5fa',
+];
+const SHAPES = ['rect', 'wide', 'circle', 'dot'];
+
+const CONFETTI = Array.from({ length: 70 }, (_, i) => ({
   id: i,
-  color: ['#0066ff', '#e1306c', '#f59e0b', '#10b981', '#8b5cf6', '#06b6d4'][i % 6],
-  left: `${(i * 17) % 96}%`,
-  size: 6 + (i % 6) * 1.5,
-  delay: `${(i % 10) * 0.2}s`,
-  fallDuration: `${3 + (i % 4) * 0.6}s`,
+  color: COLORS[i % COLORS.length],
+  shape: SHAPES[i % SHAPES.length],
+  left: `${(i * 14.3 + (i % 7) * 3.7) % 98}%`,
+  size: 5 + (i % 10) * 1.5,
+  fallDuration: `${3.5 + (i % 5) * 0.7}s`,
+  swayDuration: `${2 + (i % 4) * 0.5}s`,
+  delay: `${(i % 12) * 0.25}s`,
+  initialRotate: (i * 53) % 360,
 }));
+
+function ConfettiParticle({ p }) {
+  const isWide = p.shape === 'wide';
+  const isCircle = p.shape === 'circle';
+  const isDot = p.shape === 'dot';
+
+  const width = isDot ? p.size * 0.8 : isWide ? p.size * 2.5 : p.size;
+  const height = isDot ? p.size * 0.8 : isWide ? p.size * 0.6 : p.shape === 'rect' ? p.size * 2 : p.size;
+  const borderRadius = isCircle || isDot ? '9999px' : '2px';
+
+  return (
+    <div
+      className="confetti-piece"
+      style={{
+        left: p.left,
+        width: `${width}px`,
+        height: `${height}px`,
+        backgroundColor: p.color,
+        borderRadius,
+        opacity: 0.88,
+        animationDuration: `${p.fallDuration}, ${p.swayDuration}`,
+        animationDelay: `${p.delay}, ${p.delay}`,
+        transform: `rotate(${p.initialRotate}deg)`,
+      }}
+    />
+  );
+}
+
+// ─── Pricing Plans Data with OmniConnect Branding ───────────────────────────
+const PLANS = [
+  {
+    id: 'free',
+    name: 'Free',
+    tagline: 'Automate, save time, stay connected',
+    monthlyPrice: 0,
+    annuallyPrice: 0,
+    contacts: '25',
+    btnLabel: 'Continue with Free',
+    btnClass: 'bg-white border border-slate-300 hover:bg-slate-50 text-slate-800',
+    featured: false,
+    features: [
+      { text: '2 channels', icons: true },
+      { text: 'Basic automations (up to 4 active automations)' },
+      { text: '1 user', info: true },
+      { text: 'Basic unified Inbox', info: true },
+      { text: 'Self-serve Support', info: true },
+      { text: 'OmniConnect branding', info: true },
+    ],
+  },
+  {
+    id: 'essential',
+    name: 'Essential',
+    tagline: 'Keep fans and community engaged',
+    monthlyPrice: 15,
+    annuallyPrice: 14,
+    contacts: '250',
+    btnLabel: 'Try free for 14 days',
+    btnClass: 'bg-white border border-slate-300 hover:bg-slate-50 text-slate-800',
+    featured: false,
+    annuallyDiscount: '18% off',
+    annuallyTotal: '$168',
+    features: [
+      { text: '2 channels', icons: true },
+      { text: 'Unlimited custom automations' },
+      { text: '2 users', info: true },
+      { text: 'Basic Inbox + organization and reminders', info: true },
+      { text: 'Email Support', info: true },
+      { text: 'No OmniConnect branding', info: true },
+    ],
+  },
+  {
+    id: 'pro',
+    name: 'Pro',
+    nameAI: true,
+    tagline: 'The "not a side hustle anymore" plan',
+    monthlyPrice: 35,
+    annuallyPrice: 29,
+    contacts: '2500',
+    btnLabel: 'Try free for 14 days',
+    btnClass: 'bg-[#7c3aed] hover:bg-[#6d28d9] text-white',
+    featured: true,
+    annuallyDiscount: '25% off',
+    annuallyTotal: '$348',
+    features: [
+      { text: '3 channels', icons: true },
+      { text: 'Advanced automations, Broadcasts and AI-driven convos' },
+      { text: '3 users', info: true },
+      { text: 'Custom Inbox labels and rules', info: true },
+      { text: 'AI', info: true },
+      { text: 'Email Support', info: true },
+      { text: 'No OmniConnect branding', info: true },
+    ],
+  },
+  {
+    id: 'expert',
+    name: 'Expert',
+    nameAI: true,
+    tagline: 'For fast-growing brands & active stores',
+    monthlyPrice: 65,
+    annuallyPrice: 52,
+    contacts: '5000',
+    btnLabel: 'Try free for 14 days',
+    btnClass: 'bg-white border border-slate-300 hover:bg-slate-50 text-slate-800',
+    featured: false,
+    annuallyDiscount: '20% off',
+    annuallyTotal: '$624',
+    features: [
+      { text: 'All channels', icons: true },
+      { text: 'Full marketing suite & CRM integration' },
+      { text: '5 users', info: true },
+      { text: 'Dedicated account manager', info: true },
+      { text: 'Priority live chat', info: true },
+      { text: 'Custom webhooks', info: true },
+    ],
+  },
+  {
+    id: 'custom',
+    name: 'Custom',
+    nameAI: true,
+    tagline: 'Scale without limits across teams',
+    monthlyPrice: 'Custom',
+    annuallyPrice: 'Custom',
+    contacts: 'Unlimited',
+    btnLabel: 'Contact Sales',
+    btnClass: 'bg-white border border-slate-300 hover:bg-slate-50 text-slate-800',
+    featured: false,
+    features: [
+      { text: 'Enterprise channels + WhatsApp official' },
+      { text: 'Unlimited automations & workflows' },
+      { text: 'Unlimited users & RBAC roles' },
+      { text: 'SLA 99.9% uptime guarantee' },
+      { text: 'Dedicated IP & infrastructure' },
+      { text: 'Custom contracts & invoicing' },
+    ],
+  },
+];
 
 export default function ConnectInstagramPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
-  // States: 'idle' | 'waiting' | 'accounts' | 'connecting' | 'success' | 'error'
+  // States: 'idle' | 'waiting' | 'accounts' | 'connecting' | 'pricing' | 'celebration' | 'error'
   const [step, setStep] = useState('idle');
+  const [billing, setBilling] = useState('annually');
   const [oauthState, setOauthState] = useState(null);
   const [igAccounts, setIgAccounts] = useState([]);
   const [selectedAccount, setSelectedAccount] = useState(null);
@@ -173,14 +323,21 @@ export default function ConnectInstagramPage() {
         params: { state },
       });
 
-      const accounts = res.data?.igAccounts || [];
-      if (accounts.length === 0) {
+      const rawAccounts = res.data?.igAccounts || [];
+      if (rawAccounts.length === 0) {
         setErrorMessage(
           'No Instagram Professional accounts found linked to your authorized Facebook Pages.'
         );
         setStep('error');
         return;
       }
+
+      const accounts = rawAccounts.map((a) => ({
+        ...a,
+        profilePic: a.igProfilePicture || a.profilePic || a.pictureUrl || null,
+        pageName: a.linkedPageName || a.pageName || null,
+        followersCount: a.igFollowers !== undefined ? a.igFollowers : a.followersCount,
+      }));
 
       setIgAccounts(accounts);
       setSelectedAccount(accounts[0]);
@@ -209,7 +366,11 @@ export default function ConnectInstagramPage() {
         state: oauthState,
       });
 
-      const connected = res.data?.account || acc;
+      const connected = {
+        ...acc,
+        ...(res.data?.account || {}),
+        profilePic: acc.profilePic || res.data?.account?.profilePic || acc.igProfilePicture,
+      };
       setConnectedAccount(connected);
 
       // Persist local state
@@ -219,7 +380,8 @@ export default function ConnectInstagramPage() {
       if (acc.igUserId) localStorage.setItem('omni_instagram_ig_id', acc.igUserId);
 
       toast.success(`🎉 Instagram @${acc.igUsername} connected successfully!`);
-      setStep('success');
+      // Advance to Step 2: Pricing
+      setStep('pricing');
     } catch (err) {
       console.error('[Connect Account Error]:', err);
       setErrorMessage(err.response?.data?.error || err.message || 'Failed to connect Instagram account');
@@ -229,28 +391,212 @@ export default function ConnectInstagramPage() {
     }
   };
 
-  return (
-    <div className="w-full min-h-screen bg-white flex flex-col md:flex-row relative overflow-hidden font-sans select-none">
-      {/* Confetti Animation when Connected */}
-      {step === 'success' && (
-        <div className="fixed inset-0 pointer-events-none z-50 overflow-hidden">
+  // ── Step 2 → 3: Select Plan ───────────────────────────────────────────────
+  const handleSelectPlan = (planName) => {
+    setStep('celebration');
+  };
+
+  // ── Step 3: Let's Start Finish ─────────────────────────────────────────────
+  const handleFinish = () => {
+    const username = connectedAccount?.igUsername || selectedAccount?.igUsername || 'Instagram';
+    toast.success(`🎉 @${username} is now active in OmniConnect!`);
+    navigate('/settings?tab=instagram');
+  };
+
+  // ─── STEP 2 — Pricing / Plan Selection (OmniConnect Branding) ──────────────
+  if (step === 'pricing') {
+    return (
+      <div className="min-h-screen bg-[#faf5ff]/40 py-10 px-4 sm:px-6 flex flex-col items-center animate-fade-in overflow-y-auto font-sans select-none">
+        {/* OmniConnect Branding Heading */}
+        <div className="text-center mb-8 max-w-3xl">
+          <h1 className="text-2xl sm:text-3xl lg:text-[36px] font-extrabold text-slate-900 tracking-tight leading-tight mb-5">
+            1M+ Creators love OmniConnect. Now it&apos;s your turn.
+          </h1>
+
+          {/* Monthly / Annually Toggle matching Reference */}
+          <div className="inline-flex items-center p-1 bg-purple-100/80 rounded-full text-xs font-semibold shadow-inner">
+            <button
+              onClick={() => setBilling('monthly')}
+              className={`px-5 py-2 rounded-full transition-all cursor-pointer ${
+                billing === 'monthly'
+                  ? 'bg-white text-slate-900 shadow font-bold'
+                  : 'text-purple-700 hover:text-purple-900'
+              }`}
+            >
+              Monthly
+            </button>
+            <button
+              onClick={() => setBilling('annually')}
+              className={`px-5 py-2 rounded-full transition-all cursor-pointer ${
+                billing === 'annually'
+                  ? 'bg-[#7c3aed] text-white shadow font-bold'
+                  : 'text-purple-700 hover:text-purple-900'
+              }`}
+            >
+              Annually (up to 30% off)
+            </button>
+          </div>
+        </div>
+
+        {/* 5 Plan Cards Grid */}
+        <div className="w-full max-w-[1380px] grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 mb-8 items-end">
+          {PLANS.map((plan) => {
+            const price = billing === 'monthly' ? plan.monthlyPrice : plan.annuallyPrice;
+            const discount = billing === 'annually' ? plan.annuallyDiscount : null;
+            const total = billing === 'annually' ? plan.annuallyTotal : null;
+
+            return (
+              <div
+                key={plan.id}
+                className={`relative bg-white rounded-2xl p-5 flex flex-col shadow-sm hover:shadow-md transition-shadow ${
+                  plan.featured
+                    ? 'border-2 border-[#7c3aed] -translate-y-1'
+                    : 'border border-slate-200'
+                }`}
+              >
+                {plan.featured && (
+                  <div className="absolute -top-3.5 left-0 right-0 flex justify-center">
+                    <span className="px-3.5 py-1 bg-[#7c3aed] text-white text-[10px] font-black uppercase tracking-widest rounded-full">
+                      Most popular
+                    </span>
+                  </div>
+                )}
+
+                <div className="text-center pt-1 pb-3">
+                  <h3
+                    className={`font-extrabold text-lg flex items-center justify-center gap-1 ${
+                      plan.featured ? 'text-[#7c3aed]' : 'text-slate-900'
+                    }`}
+                  >
+                    <span>{plan.name}</span>
+                    {plan.nameAI && (
+                      <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-purple-100 text-purple-700 font-bold">
+                        +AI
+                      </span>
+                    )}
+                  </h3>
+                  <p className="text-slate-500 text-xs mt-1 min-h-[32px] leading-snug">{plan.tagline}</p>
+
+                  <div className="mt-3">
+                    <span className="text-3xl font-extrabold text-slate-900">
+                      {typeof price === 'number' ? `$${price}` : price}
+                    </span>
+                    {typeof price === 'number' && price > 0 && (
+                      <div className="text-[10.5px] text-slate-400 mt-0.5 leading-snug">
+                        per month{discount ? ` (${discount})` : ''}
+                        <br />
+                        {total ? `Annually at ${total}` : ''}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="mt-3 pt-3 border-t border-slate-100 flex items-center justify-center gap-1 text-xs font-bold text-slate-800">
+                    <span>{plan.contacts}</span>
+                    <span className="font-normal text-slate-500">Active Contacts/mo</span>
+                    <HelpCircle size={11} className="text-slate-400" />
+                  </div>
+                </div>
+
+                <button
+                  onClick={() => handleSelectPlan(plan.name)}
+                  className={`w-full py-2.5 rounded-xl font-semibold text-xs transition-colors cursor-pointer shadow-sm mb-4 ${plan.btnClass}`}
+                >
+                  {plan.btnLabel}
+                </button>
+
+                <div className="border-t border-slate-100 pt-3 space-y-2 text-xs text-slate-600 flex-1">
+                  {plan.features.map((f, fi) => (
+                    <div key={fi} className="flex items-start gap-1.5">
+                      <span>•</span>
+                      <span>{f.text}</span>
+                      {f.icons && (
+                        <span className="flex items-center gap-0.5 ml-0.5 mt-0.5">
+                          <InstagramIcon className="w-3 h-3" />
+                          <MessengerBrandIcon className="w-3 h-3" />
+                        </span>
+                      )}
+                      {f.info && <HelpCircle size={10} className="text-slate-400 shrink-0 mt-0.5" />}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        <div className="text-center text-xs text-slate-500 pb-6">
+          Need a deep dive?{' '}
+          <button
+            onClick={() => toast('Plan comparison guide for OmniConnect')}
+            className="text-[#0066ff] hover:underline font-semibold cursor-pointer"
+          >
+            View plan comparison table
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // ─── STEP 3 — Congratulations + Falling Confetti Animation ──────────────────
+  if (step === 'celebration') {
+    const avatar = connectedAccount?.profilePic || selectedAccount?.profilePic;
+    const username = connectedAccount?.igUsername || selectedAccount?.igUsername || 'Instagram';
+
+    return (
+      <div className="relative min-h-screen w-full bg-[#f7f7f7] flex flex-col items-center justify-center p-6 overflow-hidden animate-fade-in font-sans select-none">
+        {/* Top-left OmniConnect logo */}
+        <div className="absolute top-6 left-6 sm:top-10 sm:left-12 z-20">
+          <span className="text-2xl font-black text-slate-900 tracking-tight">OmniConnect</span>
+        </div>
+
+        {/* Confetti particles falling across full screen */}
+        <div className="absolute inset-0 pointer-events-none overflow-hidden z-0">
           {CONFETTI.map((p) => (
-            <div
-              key={p.id}
-              className="absolute top-0 rounded-xs animate-bounce"
-              style={{
-                left: p.left,
-                width: `${p.size}px`,
-                height: `${p.size * 1.5}px`,
-                backgroundColor: p.color,
-                animationDuration: p.fallDuration,
-                animationDelay: p.delay,
-              }}
-            />
+            <ConfettiParticle key={p.id} p={p} />
           ))}
         </div>
-      )}
 
+        {/* Central Congratulations Box with Real Instagram Account */}
+        <div className="relative z-10 flex flex-col items-center text-center space-y-5 max-w-sm">
+          {/* Real Instagram Avatar */}
+          {avatar ? (
+            <img
+              src={avatar}
+              alt={username}
+              className="w-20 h-20 rounded-full object-cover border-2 border-white shadow-md"
+            />
+          ) : (
+            <div className="w-20 h-20 rounded-full bg-linear-to-tr from-[#fdf497] via-[#fd5949] to-[#d6249f] border-2 border-white flex items-center justify-center text-white shadow-md">
+              <InstagramGradientIcon className="w-10 h-10" />
+            </div>
+          )}
+
+          {/* Dynamic Heading with Real Instagram Username */}
+          <h1 className="text-[26px] sm:text-[32px] font-extrabold text-slate-900 tracking-tight leading-tight">
+            Congratulations,<br />
+            <span className="text-[#0066ff]">@{username}</span> is connected!
+          </h1>
+
+          <p className="text-xs sm:text-sm text-slate-500 max-w-xs">
+            Your Instagram business account is fully linked and ready to automate customer messages.
+          </p>
+
+          {/* Let's Start CTA Button */}
+          <button
+            onClick={handleFinish}
+            className="mt-2 px-10 py-3 bg-[#0066ff] hover:bg-[#0052cc] active:scale-95 text-white font-semibold rounded-lg text-sm transition-all shadow-md hover:shadow-lg cursor-pointer flex items-center gap-2"
+          >
+            <span>Let&apos;s Start</span>
+            <ArrowRight size={16} />
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // ─── STEP 1 — Connect / Select Account Flow ────────────────────────────────
+  return (
+    <div className="w-full min-h-screen bg-white flex flex-col md:flex-row relative overflow-hidden font-sans select-none">
       {/* ──────────────────────────────────────────────────────────────────── */}
       {/* LEFT SECTION (Matching Manychat Screenshot 1)                        */}
       {/* ──────────────────────────────────────────────────────────────────── */}
@@ -445,13 +791,17 @@ export default function ConnectInstagramPage() {
                         <img
                           src={acc.profilePic}
                           alt={acc.igUsername}
-                          className="w-10 h-10 rounded-full object-cover border border-slate-200 shrink-0"
+                          className="w-10 h-10 rounded-full object-cover border border-slate-200 shrink-0 shadow-2xs"
+                          onError={(e) => {
+                            e.currentTarget.style.display = 'none';
+                            e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                          }}
                         />
-                      ) : (
-                        <div className="w-10 h-10 rounded-full bg-linear-to-tr from-[#fdf497] via-[#fd5949] to-[#d6249f] flex items-center justify-center text-white shrink-0">
-                          <InstagramGradientIcon className="w-5 h-5" />
-                        </div>
-                      )}
+                      ) : null}
+                      <div className={`w-10 h-10 rounded-full bg-linear-to-tr from-[#fdf497] via-[#fd5949] to-[#d6249f] flex items-center justify-center text-white shrink-0 ${acc.profilePic ? 'hidden' : ''}`}>
+                        <InstagramGradientIcon className="w-5 h-5" />
+                      </div>
+
                       <div className="min-w-0">
                         <div className="text-xs font-bold text-slate-900 truncate">
                           @{acc.igUsername}
@@ -510,51 +860,7 @@ export default function ConnectInstagramPage() {
             </div>
           )}
 
-          {/* ── State 5: Success ── */}
-          {step === 'success' && (
-            <div className="text-center py-6 space-y-4 animate-fade-in">
-              <div className="w-14 h-14 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto shadow-xs">
-                <Check size={28} strokeWidth={2.5} />
-              </div>
-
-              <div>
-                <h3 className="text-lg font-extrabold text-slate-900 tracking-tight">
-                  Instagram Connected! 🎉
-                </h3>
-                <p className="text-xs text-slate-500 mt-1">
-                  Your Instagram account{' '}
-                  <span className="font-bold text-slate-800">
-                    @{connectedAccount?.igUsername || selectedAccount?.igUsername}
-                  </span>{' '}
-                  is now linked and synced with OmniConnect.
-                </p>
-              </div>
-
-              <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-xs text-emerald-800 flex items-center justify-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                <span>Live Webhooks & Direct Messaging Active</span>
-              </div>
-
-              <div className="flex gap-2 pt-2">
-                <button
-                  type="button"
-                  onClick={() => navigate('/inbox')}
-                  className="flex-1 py-2.5 bg-[#0066ff] hover:bg-[#0052cc] text-white rounded-xl text-xs font-semibold cursor-pointer transition-colors shadow-2xs"
-                >
-                  Open Inbox
-                </button>
-                <button
-                  type="button"
-                  onClick={() => navigate('/settings?tab=instagram')}
-                  className="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-semibold cursor-pointer transition-colors"
-                >
-                  Go to Settings
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* ── State 6: Error / No Accounts ── */}
+          {/* ── State 5: Error / No Accounts ── */}
           {step === 'error' && (
             <div className="space-y-4 text-center py-4 animate-fade-in">
               <div className="w-12 h-12 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center mx-auto">
