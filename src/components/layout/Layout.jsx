@@ -13,9 +13,6 @@ export default function Layout() {
 
   return (
     <div className="flex flex-col h-full w-full max-w-full overflow-hidden bg-[#fafafa]">
-      {/* Top Banner */}
-      <TopBanner onUpgradeClick={() => setUpgradeModalOpen(true)} />
-
       {/* Mobile Top Navigation Header (< lg) */}
       <header className="lg:hidden h-14 bg-white border-b border-slate-200 px-3 sm:px-4 flex items-center justify-between shrink-0 z-30 select-none">
         <div className="flex items-center gap-2.5">

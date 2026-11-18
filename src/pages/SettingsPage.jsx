@@ -197,40 +197,45 @@ export default function SettingsPage() {
     const syncRealChannels = async () => {
       try {
         const res = await apiClient.get('/api/integrations/facebook/pages');
-        if (res.data?.success && Array.isArray(res.data.connectedPages)) {
-          const fb = res.data.connectedPages.find((p) => !p.pageId?.startsWith('ig_') && p.status === 'connected');
-          const ig = res.data.connectedPages.find((p) => (p.pageId?.startsWith('ig_') || p.category === 'Instagram') && p.status === 'connected');
+        if (res.data?.success) {
+          const allPages = res.data.connectedPages || [];
+          const fb = res.data.facebookPages?.[0] || allPages.find((p) => !p.pageId?.startsWith('ig_') && p.status === 'connected');
+          const ig = res.data.connectedInstagram || allPages.find((p) => (p.pageId?.startsWith('ig_') || p.category === 'Instagram') && p.status === 'connected');
+
+          const fbName = fb ? (fb.name || fb.pageName) : 'Facebook Messenger';
+          const igName = ig ? (ig.name || ig.pageName) : '@omniconnect_official';
 
           setChannelStatus((prev) => ({
             ...prev,
             messenger: {
               ...prev.messenger,
               connected: !!fb,
-              account: fb ? fb.name : 'Facebook Messenger',
-              pageId: fb ? fb.pageId : null,
+              account: fbName,
+              pageId: fb ? (fb.pageId || fb.id) : null,
             },
             instagram: {
               ...prev.instagram,
               connected: !!ig,
-              account: ig ? ig.name : '@omniconnect_official',
-              pageId: ig ? ig.pageId : null,
+              account: igName,
+              pageId: ig ? (ig.pageId || ig.id) : null,
             },
           }));
 
           if (fb) {
             try {
               localStorage.setItem('omni_facebook_connected', 'true');
-              localStorage.setItem('omni_facebook_page', fb.name);
+              localStorage.setItem('omni_facebook_page', fbName);
             } catch {}
           } else {
             localStorage.removeItem('omni_facebook_connected');
             localStorage.removeItem('omni_facebook_page');
             localStorage.removeItem('omni_facebook_page_id');
           }
+
           if (ig) {
             try {
               localStorage.setItem('omni_instagram_connected', 'true');
-              localStorage.setItem('omni_instagram_account', ig.name);
+              localStorage.setItem('omni_instagram_account', igName);
             } catch {}
           } else {
             localStorage.removeItem('omni_instagram_connected');
