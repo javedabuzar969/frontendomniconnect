@@ -96,7 +96,7 @@ export default function SettingsPage() {
     conversationAssigned: true,
   });
 
-  const userEmail = user?.email || 'javedabuzar969@gmail.com';
+  const userEmail = user?.email || '';
   const [notifEmail, setNotifEmail] = useState(userEmail);
   const [notifPhone, setNotifPhone] = useState('');
   const [smsConsent, setSmsConsent] = useState(false);
@@ -1279,7 +1279,7 @@ export default function SettingsPage() {
                             </div>
                             <div className="flex items-center gap-2">
                               <span className="font-semibold text-slate-800">
-                                {user?.email?.split('@')[0] || 'javedabuzar969'}
+                                {user?.email?.split('@')[0] || user?.name || 'User'}
                               </span>
                               <span className="px-2 py-0.5 bg-slate-100 text-slate-600 text-[10px] font-medium rounded-full">
                                 It's me
