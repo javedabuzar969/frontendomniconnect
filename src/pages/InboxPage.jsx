@@ -141,11 +141,13 @@ export default function InboxPage() {
 
         if (prevHash === newHash) return; // nothing changed — skip entirely
 
-        // Detect which conversations got NEW messages (existing contacts with changed lastMessage)
+        // Detect which conversations got NEW incoming messages from customers
         const prevMap = new Map(prev.map((c) => [c.id, c.lastMessage]));
         const updatedConvs = newData.filter((c) => {
           const old = prevMap.get(c.id);
-          return old !== undefined && old !== c.lastMessage;
+          const hasNewMsg = old !== undefined && old !== c.lastMessage;
+          const isFromCustomer = c.lastMessageSender === 'customer' || c.messages?.[c.messages.length - 1]?.sender === 'customer';
+          return hasNewMsg && isFromCustomer;
         });
 
         // Update ref & state
@@ -171,8 +173,10 @@ export default function InboxPage() {
             setNewMessageIds((s) => new Set([...s, ...unseenUpdated]));
           }
 
-          // Show toast popup for each new message
-          updatedConvs.forEach((c) => {
+          // Show toast popup ONLY for new incoming messages from customers on conversations NOT currently open
+          unseenUpdated.forEach((id) => {
+            const c = newData.find((conv) => conv.id === id);
+            if (!c) return;
             toast(
               (t) => (
                 <div
@@ -327,18 +331,32 @@ export default function InboxPage() {
       status: 'sending',
     };
 
-    setConversations((prev) =>
-      prev.map((c) =>
+    // Mark as seen and remove from unread notifications
+    setSeenIds((prev) => new Set([...prev, selectedId]));
+    setNewMessageIds((s) => {
+      if (!s.has(selectedId)) return s;
+      const next = new Set(s);
+      next.delete(selectedId);
+      return next;
+    });
+
+    setConversations((prev) => {
+      const updated = prev.map((c) =>
         c.id === selectedId
           ? {
               ...c,
               lastMessage: textToSend,
+              lastMessageSender: 'agent',
+              unread: false,
+              unreadCount: 0,
               time: 'Just now',
               messages: [...(c.messages || []), newMsg],
             }
           : c
-      )
-    );
+      );
+      convsRef.current = updated;
+      return updated;
+    });
 
     try {
       const res = await apiClient.post(`/api/conversations/${selectedConv.id}/messages`, {
