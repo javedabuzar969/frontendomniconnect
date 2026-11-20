@@ -1,14 +1,12 @@
 import { apiClient, isMock } from './client';
 import { MOCK_WA_CONNECTION } from '../utils/mockData';
 
-export async function fetchWhatsAppConnections(workspaceId) {
+export async function fetchWhatsAppConnections() {
   if (isMock) {
     await delay(500);
     return [MOCK_WA_CONNECTION];
   }
-  const res = await apiClient.get('/api/integrations/whatsapp', {
-    params: { workspaceId },
-  });
+  const res = await apiClient.get('/api/integrations/whatsapp');
   return res.data.data;
 }
 
