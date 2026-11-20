@@ -226,19 +226,27 @@ export default function InboxPage() {
   const handleSyncMetaChats = async () => {
     setIsSyncing(true);
     try {
-      const isIgConnected = localStorage.getItem('omni_instagram_connected') === 'true';
-      const isFbConnected = localStorage.getItem('omni_facebook_connected') === 'true';
+      let hasFb = false;
+      let hasIg = false;
+      try {
+        const pagesRes = await apiClient.get('/api/integrations/facebook/pages');
+        if (pagesRes.data?.success) {
+          const pages = pagesRes.data.connectedPages || [];
+          hasIg = !!(pagesRes.data.connectedInstagram || pages.find((p) => p.pageId?.startsWith('ig_') || p.category === 'Instagram'));
+          hasFb = !!(pagesRes.data.facebookPages?.[0] || pages.find((p) => !p.pageId?.startsWith('ig_') && p.category !== 'Instagram'));
+        }
+      } catch {}
 
       const promises = [];
-      if (isFbConnected) {
+      if (hasFb) {
         promises.push(apiClient.post('/api/integrations/facebook/sync'));
       }
-      if (isIgConnected) {
+      if (hasIg) {
         promises.push(apiClient.post('/api/integrations/facebook/instagram/sync-chats'));
       }
 
       if (promises.length === 0) {
-        toast('No channels connected to sync.');
+        toast('No connected Facebook or Instagram channels found for this workspace.');
         return;
       }
 

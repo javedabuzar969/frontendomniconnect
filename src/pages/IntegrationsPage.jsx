@@ -4,23 +4,29 @@ import WhatsAppCard from '../components/integrations/WhatsAppCard';
 import ConnectWhatsAppButton from '../components/integrations/ConnectWhatsAppButton';
 import Spinner from '../components/ui/Spinner';
 import { fetchWhatsAppConnections, disconnectWhatsApp } from '../api/integrations';
+import { useAuth } from '../contexts/AuthContext';
 import toast from 'react-hot-toast';
 
-const MOCK_WORKSPACE_ID = 'workspace_mock_001';
-
 export default function IntegrationsPage() {
+  const { user } = useAuth();
+  const workspaceId = user?.workspaceId || user?.id;
   const [connections, setConnections] = useState([]);
   const [loading, setLoading] = useState(true);
 
   // Load connections on mount
   useEffect(() => {
-    loadConnections();
-  }, []);
+    if (workspaceId) {
+      loadConnections();
+    } else {
+      setLoading(false);
+    }
+  }, [workspaceId]);
 
   const loadConnections = async () => {
+    if (!workspaceId) return;
     setLoading(true);
     try {
-      const data = await fetchWhatsAppConnections(MOCK_WORKSPACE_ID);
+      const data = await fetchWhatsAppConnections(workspaceId);
       setConnections(data);
     } catch (err) {
       toast.error('Failed to load connections.');
@@ -63,7 +69,7 @@ export default function IntegrationsPage() {
           </p>
         </div>
         <ConnectWhatsAppButton
-          workspaceId={MOCK_WORKSPACE_ID}
+          workspaceId={workspaceId}
           onSuccess={handleConnected}
         />
       </div>
@@ -90,7 +96,7 @@ export default function IntegrationsPage() {
               No password needed.
             </p>
             <ConnectWhatsAppButton
-              workspaceId={MOCK_WORKSPACE_ID}
+              workspaceId={workspaceId}
               onSuccess={handleConnected}
             />
           </div>

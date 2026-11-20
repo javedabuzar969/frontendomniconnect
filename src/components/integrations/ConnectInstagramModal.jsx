@@ -180,10 +180,10 @@ export default function ConnectInstagramModal({
       const connected = res.data?.account || acc;
       setConnectedAccount(connected);
 
-      localStorage.setItem('omni_instagram_connected', 'true');
-      localStorage.setItem('omni_instagram_account', `@${acc.igUsername}`);
-      if (acc.pageId) localStorage.setItem('omni_instagram_page_id', acc.pageId);
-      if (acc.igUserId) localStorage.setItem('omni_instagram_ig_id', acc.igUserId);
+      // Re-fetch status from API
+      try {
+        await apiClient.get('/api/integrations/facebook/pages');
+      } catch {}
 
       toast.success(`🎉 Instagram @${acc.igUsername} connected!`);
       setStep('success');

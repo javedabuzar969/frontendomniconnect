@@ -148,18 +148,36 @@ export function AuthProvider({ children }) {
     }
   };
 
-  // Helper to purge workspace/channel cache from localStorage on user change
-  const purgeUserLocalCache = () => {
+  // Helper to purge workspace/channel cache from localStorage & sessionStorage on user change / login / logout
+  const purgeUserLocalCache = (clearAuthToken = false) => {
     try {
-      const keysToRemove = [];
+      // 1. Purge from localStorage (all omni_* keys, plus auth keys if logging out)
+      const localKeys = [];
       for (let i = 0; i < localStorage.length; i++) {
         const k = localStorage.key(i);
-        if (k && (k.startsWith('omni_') || k.startsWith('__oc_'))) {
-          keysToRemove.push(k);
+        if (!k) continue;
+        if (k.startsWith('omni_')) {
+          localKeys.push(k);
+        } else if (k.startsWith('__oc_')) {
+          if (clearAuthToken || (k !== TOKEN_KEY && k !== CURRENT_USER_KEY)) {
+            localKeys.push(k);
+          }
         }
       }
-      keysToRemove.forEach((k) => localStorage.removeItem(k));
-      sessionStorage.removeItem(LEGACY_TOKEN_KEY);
+      localKeys.forEach((k) => localStorage.removeItem(k));
+
+      // 2. Purge from sessionStorage
+      const sessionKeys = [];
+      for (let i = 0; i < sessionStorage.length; i++) {
+        const k = sessionStorage.key(i);
+        if (!k) continue;
+        if (k.startsWith('omni_') || k.startsWith('ig_') || k.startsWith('fb_')) {
+          sessionKeys.push(k);
+        } else if (k === LEGACY_TOKEN_KEY && clearAuthToken) {
+          sessionKeys.push(k);
+        }
+      }
+      sessionKeys.forEach((k) => sessionStorage.removeItem(k));
     } catch (_) {}
   };
 
@@ -168,7 +186,7 @@ export function AuthProvider({ children }) {
     try {
       await supabase.auth.signOut();
     } catch (_) {}
-    purgeUserLocalCache();
+    purgeUserLocalCache(true);
     setUser(null);
   };
 

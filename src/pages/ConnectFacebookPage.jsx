@@ -320,11 +320,9 @@ export default function ConnectFacebookPage() {
 
       if (res.data?.success) {
         setSelectedPage(page);
-        // Save to localStorage for instant UI state
+        // Refresh live connected status from API
         try {
-          localStorage.setItem('omni_facebook_connected', 'true');
-          localStorage.setItem('omni_facebook_page', page.name);
-          localStorage.setItem('omni_facebook_page_id', page.id);
+          await loadConnectedPages();
         } catch {}
 
         toast.success(`🎉 "${page.name}" connected!`);

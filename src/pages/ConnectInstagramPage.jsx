@@ -377,11 +377,10 @@ export default function ConnectInstagramPage() {
       };
       setConnectedAccount(connected);
 
-      // Persist local state
-      localStorage.setItem('omni_instagram_connected', 'true');
-      localStorage.setItem('omni_instagram_account', `@${acc.igUsername}`);
-      if (acc.pageId) localStorage.setItem('omni_instagram_page_id', acc.pageId);
-      if (acc.igUserId) localStorage.setItem('omni_instagram_ig_id', acc.igUserId);
+      // Refresh status from API
+      try {
+        await apiClient.get('/api/integrations/facebook/pages');
+      } catch {}
 
       toast.success(`🎉 Instagram @${acc.igUsername} connected successfully!`);
       // Advance to Step 2: Pricing

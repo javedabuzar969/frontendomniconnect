@@ -171,20 +171,14 @@ export default function SettingsPage() {
   const [fbTurnedOffDismissed, setFbTurnedOffDismissed] = useState(false);
 
   // Channel Connection States (for all 7 channels)
-  const [channelStatus, setChannelStatus] = useState(() => {
-    const isIgConnected = localStorage.getItem('omni_instagram_connected') === 'true';
-    const igAcc = localStorage.getItem('omni_instagram_account') || '@omniconnect_official';
-    const isFbConnected = localStorage.getItem('omni_facebook_connected') === 'true';
-    const fbAcc = localStorage.getItem('omni_facebook_page') || 'Hallwala';
-    return {
-      instagram: { connected: isIgConnected, account: igAcc, name: 'Instagram' },
-      tiktok: { connected: false, account: '@omniconnect_tiktok', name: 'TikTok' },
-      whatsapp: { connected: false, account: '+1 555 123 4567', name: 'WhatsApp for your business' },
-      messenger: { connected: isFbConnected, account: fbAcc, name: 'Facebook Messenger chatbot #1' },
-      sms: { connected: false, account: '+1 800 555 0199', name: 'SMS Channel' },
-      email: { connected: false, account: 'support@omniconnect.com', name: 'Email Channel' },
-      telegram: { connected: false, account: '@OmniConnectBot', name: 'Telegram Channel' },
-    };
+  const [channelStatus, setChannelStatus] = useState({
+    instagram: { connected: false, account: '', name: 'Instagram', pageId: null },
+    tiktok: { connected: false, account: '', name: 'TikTok', pageId: null },
+    whatsapp: { connected: false, account: '', name: 'WhatsApp for your business', pageId: null },
+    messenger: { connected: false, account: '', name: 'Facebook Messenger chatbot #1', pageId: null },
+    sms: { connected: false, account: '', name: 'SMS Channel', pageId: null },
+    email: { connected: false, account: '', name: 'Email Channel', pageId: null },
+    telegram: { connected: false, account: '', name: 'Telegram Channel', pageId: null },
   });
 
   useEffect(() => {
@@ -202,8 +196,8 @@ export default function SettingsPage() {
           const fb = res.data.facebookPages?.[0] || allPages.find((p) => !p.pageId?.startsWith('ig_') && p.status === 'connected');
           const ig = res.data.connectedInstagram || allPages.find((p) => (p.pageId?.startsWith('ig_') || p.category === 'Instagram') && p.status === 'connected');
 
-          const fbName = fb ? (fb.name || fb.pageName) : 'Facebook Messenger';
-          const igName = ig ? (ig.name || ig.pageName) : '@omniconnect_official';
+          const fbName = fb ? (fb.name || fb.pageName || 'Facebook Page') : '';
+          const igName = ig ? (ig.name || ig.pageName || '@instagram') : '';
 
           setChannelStatus((prev) => ({
             ...prev,
@@ -220,32 +214,20 @@ export default function SettingsPage() {
               pageId: ig ? (ig.pageId || ig.id) : null,
             },
           }));
-
-          if (fb) {
-            try {
-              localStorage.setItem('omni_facebook_connected', 'true');
-              localStorage.setItem('omni_facebook_page', fbName);
-            } catch {}
-          } else {
-            localStorage.removeItem('omni_facebook_connected');
-            localStorage.removeItem('omni_facebook_page');
-            localStorage.removeItem('omni_facebook_page_id');
-          }
-
-          if (ig) {
-            try {
-              localStorage.setItem('omni_instagram_connected', 'true');
-              localStorage.setItem('omni_instagram_account', igName);
-            } catch {}
-          } else {
-            localStorage.removeItem('omni_instagram_connected');
-            localStorage.removeItem('omni_instagram_account');
-            localStorage.removeItem('omni_instagram_page_id');
-            localStorage.removeItem('omni_instagram_ig_id');
-          }
+        } else {
+          setChannelStatus((prev) => ({
+            ...prev,
+            messenger: { ...prev.messenger, connected: false, account: '', pageId: null },
+            instagram: { ...prev.instagram, connected: false, account: '', pageId: null },
+          }));
         }
       } catch (err) {
         console.warn('[Settings] Sync channels from backend:', err.message);
+        setChannelStatus((prev) => ({
+          ...prev,
+          messenger: { ...prev.messenger, connected: false, account: '', pageId: null },
+          instagram: { ...prev.instagram, connected: false, account: '', pageId: null },
+        }));
       }
     };
     syncRealChannels();
@@ -406,10 +388,6 @@ export default function SettingsPage() {
 
     if (channelId === 'instagram') {
       try {
-        localStorage.removeItem('omni_instagram_connected');
-        localStorage.removeItem('omni_instagram_account');
-        localStorage.removeItem('omni_instagram_page_id');
-        localStorage.removeItem('omni_instagram_ig_id');
         await apiClient.post('/api/integrations/facebook/instagram/disconnect', { deleteChats: false }).catch(() => {});
       } catch (e) {
         console.warn(e);
@@ -417,21 +395,19 @@ export default function SettingsPage() {
     }
     if (channelId === 'messenger') {
       try {
-        // Get page ID from live status or localStorage
-        const pageId = channelStatus.messenger?.pageId || localStorage.getItem('omni_facebook_page_id') || '1297933293411171';
-        localStorage.removeItem('omni_facebook_connected');
-        localStorage.removeItem('omni_facebook_page');
-        localStorage.removeItem('omni_facebook_page_id');
-        await apiClient.post('/api/integrations/facebook/disconnect-page', {
-          pageId,
-        }).catch((err) => console.warn('[Messenger disconnect]', err.message));
+        const pageId = channelStatus.messenger?.pageId;
+        if (pageId) {
+          await apiClient.post('/api/integrations/facebook/disconnect-page', {
+            pageId,
+          }).catch((err) => console.warn('[Messenger disconnect]', err.message));
+        }
       } catch (e) {
         console.warn(e);
       }
     }
     setChannelStatus((prev) => ({
       ...prev,
-      [channelId]: { ...prev[channelId], connected: false, pageId: null },
+      [channelId]: { ...prev[channelId], connected: false, account: '', pageId: null },
     }));
     toast(`${channelName} disconnect ho gaya`, { icon: '🔌' });
   };
@@ -3224,14 +3200,27 @@ export default function SettingsPage() {
       <ConnectInstagramModal
         isOpen={showInstagramModal}
         onClose={() => setShowInstagramModal(false)}
-        onSuccess={() => {
-          const igAccount = localStorage.getItem('omni_instagram_account') || '@omniconnect_official';
-          setChannelStatus((prev) => ({
-            ...prev,
-            instagram: { ...prev.instagram, connected: true, account: igAccount },
-          }));
+        onSuccess={async () => {
           setShowInstagramModal(false);
           toast.success('🎉 Instagram connected successfully!');
+          try {
+            const res = await apiClient.get('/api/integrations/facebook/pages');
+            if (res.data?.success) {
+              const allPages = res.data.connectedPages || [];
+              const ig = res.data.connectedInstagram || allPages.find((p) => (p.pageId?.startsWith('ig_') || p.category === 'Instagram') && p.status === 'connected');
+              if (ig) {
+                setChannelStatus((prev) => ({
+                  ...prev,
+                  instagram: {
+                    ...prev.instagram,
+                    connected: true,
+                    account: ig.name || ig.pageName || '@instagram',
+                    pageId: ig.pageId || ig.id,
+                  },
+                }));
+              }
+            }
+          } catch (_) {}
         }}
       />
     </div>
