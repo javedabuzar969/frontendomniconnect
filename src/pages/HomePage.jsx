@@ -26,7 +26,7 @@ export default function HomePage() {
           </h1>
           {user && (
             <p className="text-xs sm:text-sm text-slate-500 mt-0.5 font-medium">
-              {user.workspace || 'Workspace'} • <span className="text-slate-400">{user.email}</span>
+              <span className="text-slate-400">{user.email}</span>
             </p>
           )}
         </div>

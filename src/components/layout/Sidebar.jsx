@@ -69,10 +69,14 @@ export default function Sidebar({ onUpgradeClick, isMobile = false, onCloseMobil
     navigate('/login');
   };
 
-  // Derive display info from real user
+  // Derive display info from real user without raw 'Workspace' branding
   const displayName = user?.name || 'My Profile';
   const displayEmail = user?.email || '';
-  const displayWorkspace = user?.workspace || 'new WhatsApp acc...';
+  const rawWs = (user?.workspace || '')
+    .replace(/['’]s\s*Workspace/gi, '')
+    .replace(/\b(my\s*)?workspace\b/gi, '')
+    .trim();
+  const displayWorkspace = rawWs || user?.name || (user?.email ? user.email.split('@')[0] : 'My Account');
   const avatarInitials = displayName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
 
   return (

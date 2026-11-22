@@ -1240,7 +1240,7 @@ export default function SettingsPage() {
               <div className="bg-white rounded-xl border border-slate-200/90 shadow-2xs p-6 space-y-6">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   <h3 className="text-sm font-semibold text-slate-900">
-                    Team members for {user?.workspace || 'new WhatsApp account'}
+                    Team members for {user?.name || user?.email?.split('@')[0] || 'your account'}
                   </h3>
                   <button
                     onClick={() => setInviteModalOpen(true)}
