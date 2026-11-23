@@ -70,7 +70,9 @@ export default function InboxPage() {
   const [showConnectViaMetaModal, setShowConnectViaMetaModal] = useState(() => {
     return searchParams.get('channel') === 'whatsapp';
   });
-  const [metaChannelName, setMetaChannelName] = useState('WhatsApp & Meta');
+  const [metaChannelName, setMetaChannelName] = useState(() => {
+    return searchParams.get('channel') === 'whatsapp' ? 'WhatsApp' : 'WhatsApp & Meta';
+  });
   const [testMenuOpen, setTestMenuOpen] = useState(false);
   const [showProModal, setShowProModal] = useState(() => {
     return searchParams.get('proTrial') === 'true';
@@ -1027,8 +1029,9 @@ export default function InboxPage() {
         }}
         channelName={metaChannelName}
         onSuccess={async () => {
+          setShowConnectViaMetaModal(false);
           await loadConversations();
-          toast.success(`🎉 ${metaChannelName} connected via Meta!`);
+          toast.success(`🎉 ${metaChannelName} connected!`);
         }}
       />
 

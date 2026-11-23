@@ -166,7 +166,8 @@ export default function SettingsPage() {
   const [inviteEmail, setInviteEmail] = useState('');
   const [groupModalOpen, setGroupModalOpen] = useState(false);
   const [groupName, setGroupName] = useState('');
-  const [connectModal, setConnectModal] = useState({ open: false, channelId: null, accountInput: '' });
+  const [connectModal, setConnectModal] = useState({ open: false, channelId: null, accountInput: '', waPhoneNumberId: '', waWabaId: '', waAccessToken: '' });
+  const [connectLoading, setConnectLoading] = useState(false);
   const [showInstagramModal, setShowInstagramModal] = useState(false);
   const [fbTurnedOffDismissed, setFbTurnedOffDismissed] = useState(false);
 
@@ -228,6 +229,25 @@ export default function SettingsPage() {
           messenger: { ...prev.messenger, connected: false, account: '', pageId: null },
           instagram: { ...prev.instagram, connected: false, account: '', pageId: null },
         }));
+      }
+
+      // Sync WhatsApp status
+      try {
+        const waRes = await apiClient.get('/api/whatsapp/status');
+        if (waRes.data?.success) {
+          setChannelStatus((prev) => ({
+            ...prev,
+            whatsapp: {
+              ...prev.whatsapp,
+              connected: !!waRes.data.connected,
+              account: waRes.data.connected
+                ? (waRes.data.displayPhoneNumber || waRes.data.verifiedName || 'WhatsApp Business')
+                : '',
+            },
+          }));
+        }
+      } catch (err) {
+        console.warn('[Settings] WhatsApp status check:', err.message);
       }
     };
     syncRealChannels();
@@ -350,23 +370,69 @@ export default function SettingsPage() {
       return;
     }
 
+    if (channelId === 'whatsapp') {
+      setConnectModal({ open: true, channelId, accountInput: '', waPhoneNumberId: '', waWabaId: '', waAccessToken: '' });
+      return;
+    }
+
     const defaultPlaceholder =
       channelId === 'tiktok'
         ? '@brand_tiktok'
-        : channelId === 'whatsapp'
-        ? '+1 555 019 2834'
         : channelId === 'sms'
         ? '+1 800 555 0199'
         : channelId === 'email'
         ? 'support@mybusiness.com'
         : '@MyBrandBot';
 
-    setConnectModal({ open: true, channelId, accountInput: defaultPlaceholder });
+    setConnectModal({ open: true, channelId, accountInput: defaultPlaceholder, waPhoneNumberId: '', waWabaId: '', waAccessToken: '' });
   };
 
-  const handleConfirmConnect = () => {
-    const { channelId, accountInput } = connectModal;
+  const handleConfirmConnect = async () => {
+    const { channelId, accountInput, waPhoneNumberId, waWabaId, waAccessToken } = connectModal;
     if (!channelId) return;
+
+    if (channelId === 'whatsapp') {
+      if (!waPhoneNumberId.trim() || !waWabaId.trim() || !waAccessToken.trim()) {
+        toast.error('Phone Number ID, WABA ID, and Access Token are all required.');
+        return;
+      }
+      setConnectLoading(true);
+      try {
+        const res = await apiClient.post('/api/whatsapp/connect', {
+          phoneNumberId: waPhoneNumberId.trim(),
+          wabaId: waWabaId.trim(),
+          accessToken: waAccessToken.trim(),
+        });
+        if (res.data?.success) {
+          const d = res.data.data || {};
+          setChannelStatus((prev) => ({
+            ...prev,
+            whatsapp: {
+              ...prev.whatsapp,
+              connected: true,
+              account: d.displayPhoneNumber || d.verifiedName || 'WhatsApp Business',
+            },
+          }));
+          toast.success('WhatsApp connected successfully! 🎉');
+          // Clear token from state immediately
+          setConnectModal({ open: false, channelId: null, accountInput: '', waPhoneNumberId: '', waWabaId: '', waAccessToken: '' });
+        } else {
+          toast.error(res.data?.error || 'Connection failed');
+        }
+      } catch (err) {
+        const msg = err.response?.data?.error || err.message || 'Connection failed';
+        if (err.response?.status === 409) {
+          toast.error('This WhatsApp number is already connected to another workspace.');
+        } else {
+          toast.error(msg);
+        }
+      } finally {
+        setConnectLoading(false);
+        // Always clear token from state after attempt
+        setConnectModal((prev) => ({ ...prev, waAccessToken: '' }));
+      }
+      return;
+    }
 
     setChannelStatus((prev) => ({
       ...prev,
@@ -378,7 +444,7 @@ export default function SettingsPage() {
     }));
 
     toast.success(`${channelStatus[channelId]?.name || 'Channel'} connected successfully! 🎉`);
-    setConnectModal({ open: false, channelId: null, accountInput: '' });
+    setConnectModal({ open: false, channelId: null, accountInput: '', waPhoneNumberId: '', waWabaId: '', waAccessToken: '' });
   };
 
   const handleDisconnect = async (channelId) => {
@@ -403,6 +469,13 @@ export default function SettingsPage() {
         }
       } catch (e) {
         console.warn(e);
+      }
+    }
+    if (channelId === 'whatsapp') {
+      try {
+        await apiClient.delete('/api/whatsapp/disconnect');
+      } catch (err) {
+        console.warn('[WhatsApp disconnect]', err.response?.data?.error || err.message);
       }
     }
     setChannelStatus((prev) => ({
@@ -3155,7 +3228,7 @@ export default function SettingsPage() {
                 Connect {channelStatus[connectModal.channelId]?.name || 'Channel'}
               </h3>
               <button
-                onClick={() => setConnectModal({ open: false, channelId: null, accountInput: '' })}
+                onClick={() => setConnectModal({ open: false, channelId: null, accountInput: '', waPhoneNumberId: '', waWabaId: '', waAccessToken: '' })}
                 className="p-1 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 cursor-pointer"
               >
                 <X size={18} />
@@ -3166,30 +3239,68 @@ export default function SettingsPage() {
               Enter your account username, business phone, or channel identifier to link with OmniConnect automation.
             </p>
 
-            <div className="space-y-2">
-              <label className="text-xs font-bold text-slate-700">Account Identifier</label>
-              <input
-                type="text"
-                value={connectModal.accountInput}
-                onChange={(e) => setConnectModal({ ...connectModal, accountInput: e.target.value })}
-                className="w-full px-3.5 py-2 text-sm border border-slate-200 rounded-xl focus:outline-none focus:border-blue-500 shadow-2xs font-medium"
-                placeholder="Enter handle or account ID"
-                autoFocus
-              />
-            </div>
+            {connectModal.channelId === 'whatsapp' ? (
+              <div className="space-y-3">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-slate-700">Phone Number ID</label>
+                  <input
+                    type="text"
+                    value={connectModal.waPhoneNumberId}
+                    onChange={(e) => setConnectModal({ ...connectModal, waPhoneNumberId: e.target.value })}
+                    className="w-full px-3.5 py-2 text-sm border border-slate-200 rounded-xl focus:outline-none focus:border-blue-500 shadow-2xs font-medium"
+                    placeholder="e.g. 123456789012345"
+                    autoFocus
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-slate-700">WhatsApp Business Account ID (WABA ID)</label>
+                  <input
+                    type="text"
+                    value={connectModal.waWabaId}
+                    onChange={(e) => setConnectModal({ ...connectModal, waWabaId: e.target.value })}
+                    className="w-full px-3.5 py-2 text-sm border border-slate-200 rounded-xl focus:outline-none focus:border-blue-500 shadow-2xs font-medium"
+                    placeholder="e.g. 987654321098765"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-slate-700">Access Token</label>
+                  <input
+                    type="password"
+                    value={connectModal.waAccessToken}
+                    onChange={(e) => setConnectModal({ ...connectModal, waAccessToken: e.target.value })}
+                    className="w-full px-3.5 py-2 text-sm border border-slate-200 rounded-xl focus:outline-none focus:border-blue-500 shadow-2xs font-medium"
+                    placeholder="Meta System User Access Token"
+                    autoComplete="new-password"
+                  />
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-slate-700">Account Identifier</label>
+                <input
+                  type="text"
+                  value={connectModal.accountInput}
+                  onChange={(e) => setConnectModal({ ...connectModal, accountInput: e.target.value })}
+                  className="w-full px-3.5 py-2 text-sm border border-slate-200 rounded-xl focus:outline-none focus:border-blue-500 shadow-2xs font-medium"
+                  placeholder="Enter handle or account ID"
+                  autoFocus
+                />
+              </div>
+            )}
 
             <div className="flex items-center justify-end gap-2 pt-2">
               <button
-                onClick={() => setConnectModal({ open: false, channelId: null, accountInput: '' })}
+                onClick={() => setConnectModal({ open: false, channelId: null, accountInput: '', waPhoneNumberId: '', waWabaId: '', waAccessToken: '' })}
                 className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-xl text-xs font-semibold cursor-pointer"
               >
                 Cancel
               </button>
               <button
                 onClick={handleConfirmConnect}
-                className="px-5 py-2 bg-[#0066ff] hover:bg-[#0052cc] text-white rounded-xl text-xs font-bold shadow-xs cursor-pointer"
+                disabled={connectLoading}
+                className="px-5 py-2 bg-[#0066ff] hover:bg-[#0052cc] text-white rounded-xl text-xs font-bold shadow-xs cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
               >
-                Connect Account
+                {connectLoading ? 'Connecting...' : 'Connect Account'}
               </button>
             </div>
           </div>

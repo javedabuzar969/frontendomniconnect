@@ -41,7 +41,56 @@ export default function ConnectViaMetaModal({
   const [step, setStep] = useState('connect'); // 'connect' | 'select' | 'success'
   const [oauthState, setOauthState] = useState(null);
 
+  // WhatsApp form fields
+  const [waPhoneNumberId, setWaPhoneNumberId] = useState('');
+  const [waWabaId, setWaWabaId] = useState('');
+  const [waAccessToken, setWaAccessToken] = useState('');
+
   const isInstagram = channelName.toLowerCase().includes('instagram') || channelName.toLowerCase().includes('insta');
+  const isWhatsApp = channelName.toLowerCase().includes('whatsapp');
+
+  const handleClose = () => {
+    // Clear token immediately on modal close
+    setWaAccessToken('');
+    setWaPhoneNumberId('');
+    setWaWabaId('');
+    onClose?.();
+  };
+
+  const handleConnectWhatsApp = async () => {
+    if (!waPhoneNumberId.trim() || !waWabaId.trim() || !waAccessToken.trim()) {
+      toast.error('Phone Number ID, WABA ID, and Access Token are all required.');
+      return;
+    }
+    setLoading(true);
+    setLoadingText('Connecting WhatsApp...');
+    try {
+      const res = await apiClient.post('/api/whatsapp/connect', {
+        phoneNumberId: waPhoneNumberId.trim(),
+        wabaId: waWabaId.trim(),
+        accessToken: waAccessToken.trim(),
+      });
+      if (res.data?.success) {
+        toast.success('WhatsApp connected successfully! 🎉');
+        setWaAccessToken('');
+        setWaPhoneNumberId('');
+        setWaWabaId('');
+        onSuccess?.(res.data.data);
+        onClose?.();
+      } else {
+        toast.error(res.data?.error || 'Connection failed');
+      }
+    } catch (err) {
+      if (err.response?.status === 409) {
+        toast.error('This WhatsApp number is already connected to another workspace.');
+      } else {
+        toast.error(err.response?.data?.error || err.message || 'Connection failed');
+      }
+    } finally {
+      setLoading(false);
+      setWaAccessToken('');
+    }
+  };
 
   // Listen for popup OAuth callback message
   useEffect(() => {
@@ -251,7 +300,7 @@ export default function ConnectViaMetaModal({
     >
       {!isFullScreen && onClose && (
         <button
-          onClick={onClose}
+          onClick={handleClose}
           className="absolute right-5 top-5 text-slate-400 hover:text-slate-700 p-2 rounded-xl hover:bg-slate-100 transition-colors z-20 cursor-pointer"
         >
           <X size={20} />
@@ -280,16 +329,18 @@ export default function ConnectViaMetaModal({
             </div>
 
             <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight leading-tight mt-6">
-              Connect {isInstagram ? 'Instagram' : channelName}
+              Connect {isWhatsApp ? 'WhatsApp' : isInstagram ? 'Instagram' : channelName}
             </h2>
             <p className="text-slate-500 text-xs sm:text-sm mt-3 leading-relaxed">
-              Use your official Meta account to connect {isInstagram ? 'Instagram Direct Messages' : channelName} to OmniConnect.
+              {isWhatsApp
+                ? 'Enter your official WhatsApp Cloud API credentials to link with OmniConnect automation.'
+                : `Use your official Meta account to connect ${isInstagram ? 'Instagram Direct Messages' : channelName} to OmniConnect.`}
             </p>
           </div>
 
           <div className="pt-8">
             <button
-              onClick={onBack || onClose}
+              onClick={onBack || handleClose}
               className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-slate-600 hover:text-slate-900 transition-colors cursor-pointer"
             >
               <ChevronLeft size={16} />
@@ -302,52 +353,116 @@ export default function ConnectViaMetaModal({
         <div className="md:col-span-7 p-8 sm:p-14 flex flex-col justify-center bg-white">
           <div className="max-w-[420px] mx-auto w-full text-center sm:text-left">
             {step === 'connect' && (
-              <>
-                <h3 className="text-base sm:text-lg font-bold text-slate-900 mb-2">
-                  Log in to Business Tools from Meta
-                </h3>
-                <p className="text-xs sm:text-[13px] text-slate-500 leading-relaxed mb-6">
-                  Authorize OmniConnect to manage messages and sync historical conversations.
-                </p>
+              isWhatsApp ? (
+                <div>
+                  <h3 className="text-base sm:text-lg font-bold text-slate-900 mb-1">
+                    WhatsApp Cloud API Setup
+                  </h3>
+                  <p className="text-xs sm:text-[13px] text-slate-500 leading-relaxed mb-5">
+                    Connect your Meta WhatsApp Business Account using your Phone Number ID and permanent access token.
+                  </p>
 
-                <div className="space-y-3">
-                  <button
-                    onClick={handleLaunchInstagramPopup}
-                    disabled={loading}
-                    className="w-full py-3 px-5 bg-white hover:bg-slate-50 border border-slate-300 hover:border-slate-400 text-slate-800 font-semibold text-sm rounded-full transition-all shadow-xs flex items-center justify-center gap-2.5 cursor-pointer disabled:opacity-60"
-                  >
-                    {loading ? (
-                      <Loader2 className="w-5 h-5 animate-spin text-rose-500" />
-                    ) : (
-                      <InstagramColoredIcon className="w-5 h-5 shrink-0" />
-                    )}
-                    <span>{loading ? loadingText : 'Continue with Instagram'}</span>
-                  </button>
+                  <div className="space-y-3.5">
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-bold text-slate-700">Phone Number ID</label>
+                      <input
+                        type="text"
+                        value={waPhoneNumberId}
+                        onChange={(e) => setWaPhoneNumberId(e.target.value)}
+                        className="w-full px-3.5 py-2 text-sm border border-slate-200 rounded-xl focus:outline-none focus:border-blue-500 shadow-2xs font-medium"
+                        placeholder="e.g. 102938475610293"
+                        autoFocus
+                      />
+                    </div>
 
-                  {!isInstagram && (
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-bold text-slate-700">WhatsApp Business Account ID (WABA ID)</label>
+                      <input
+                        type="text"
+                        value={waWabaId}
+                        onChange={(e) => setWaWabaId(e.target.value)}
+                        className="w-full px-3.5 py-2 text-sm border border-slate-200 rounded-xl focus:outline-none focus:border-blue-500 shadow-2xs font-medium"
+                        placeholder="e.g. 987654321098765"
+                      />
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-bold text-slate-700">Permanent Access Token</label>
+                      <input
+                        type="password"
+                        value={waAccessToken}
+                        onChange={(e) => setWaAccessToken(e.target.value)}
+                        className="w-full px-3.5 py-2 text-sm border border-slate-200 rounded-xl focus:outline-none focus:border-blue-500 shadow-2xs font-medium"
+                        placeholder="Meta System User Access Token"
+                        autoComplete="new-password"
+                      />
+                    </div>
+
                     <button
-                      onClick={handleLaunchMetaPopup}
+                      type="button"
+                      onClick={handleConnectWhatsApp}
+                      disabled={loading}
+                      className="w-full py-2.5 px-5 bg-[#0066ff] hover:bg-[#0052cc] text-white font-bold text-sm rounded-xl transition-all shadow-xs flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed mt-2"
+                    >
+                      {loading ? (
+                        <>
+                          <Loader2 className="w-4 h-4 animate-spin text-white" />
+                          <span>Connecting WhatsApp...</span>
+                        </>
+                      ) : (
+                        <span>Connect WhatsApp</span>
+                      )}
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <h3 className="text-base sm:text-lg font-bold text-slate-900 mb-2">
+                    Log in to Business Tools from Meta
+                  </h3>
+                  <p className="text-xs sm:text-[13px] text-slate-500 leading-relaxed mb-6">
+                    Authorize OmniConnect to manage messages and sync historical conversations.
+                  </p>
+
+                  <div className="space-y-3">
+                    <button
+                      onClick={handleLaunchInstagramPopup}
                       disabled={loading}
                       className="w-full py-3 px-5 bg-white hover:bg-slate-50 border border-slate-300 hover:border-slate-400 text-slate-800 font-semibold text-sm rounded-full transition-all shadow-xs flex items-center justify-center gap-2.5 cursor-pointer disabled:opacity-60"
                     >
-                      <div className="w-5 h-5 rounded-full bg-[#0081FB] text-white flex items-center justify-center font-bold text-xs">
-                        f
-                      </div>
-                      <span>Continue with Facebook</span>
+                      {loading ? (
+                        <Loader2 className="w-5 h-5 animate-spin text-rose-500" />
+                      ) : (
+                        <InstagramColoredIcon className="w-5 h-5 shrink-0" />
+                      )}
+                      <span>{loading ? loadingText : 'Continue with Instagram'}</span>
                     </button>
-                  )}
-                </div>
 
-                <div className="mt-6 flex items-center justify-center gap-1.5 text-slate-700 text-sm font-bold">
-                  <svg className="w-5 h-5" viewBox="0 0 36 36" fill="none">
-                    <path
-                      d="M20.2 13.4C18.6 11 16.3 9.6 13.7 9.6C9.4 9.6 6 13.3 6 18C6 22.7 9.4 26.4 13.7 26.4C16.3 26.4 18.6 25 20.2 22.6C21.8 25 24.1 26.4 26.7 26.4C31 26.4 34.4 22.7 34.4 18C34.4 13.3 31 9.6 26.7 9.6C24.1 9.6 21.8 11 20.2 13.4ZM13.7 23.3C10.9 23.3 8.7 20.9 8.7 18C8.7 15.1 10.9 12.7 13.7 12.7C15.6 12.7 17.3 13.8 18.5 15.6C18.1 16.3 17.6 17.1 17 17.9C16.1 19.1 15.1 20.4 14.2 21.7C14 22 13.9 22.4 13.7 22.8C13.7 23 13.7 23.1 13.7 23.3ZM26.7 23.3C23.9 23.3 21.7 20.9 21.7 18C21.7 15.1 23.9 12.7 26.7 12.7C29.5 12.7 31.7 15.1 31.7 18C31.7 20.9 29.5 23.3 26.7 23.3Z"
-                      fill="#0064E0"
-                    />
-                  </svg>
-                  <span>Meta Verified Integration</span>
-                </div>
-              </>
+                    {!isInstagram && (
+                      <button
+                        onClick={handleLaunchMetaPopup}
+                        disabled={loading}
+                        className="w-full py-3 px-5 bg-white hover:bg-slate-50 border border-slate-300 hover:border-slate-400 text-slate-800 font-semibold text-sm rounded-full transition-all shadow-xs flex items-center justify-center gap-2.5 cursor-pointer disabled:opacity-60"
+                      >
+                        <div className="w-5 h-5 rounded-full bg-[#0081FB] text-white flex items-center justify-center font-bold text-xs">
+                          f
+                        </div>
+                        <span>Continue with Facebook</span>
+                      </button>
+                    )}
+                  </div>
+
+                  <div className="mt-6 flex items-center justify-center gap-1.5 text-slate-700 text-sm font-bold">
+                    <svg className="w-5 h-5" viewBox="0 0 36 36" fill="none">
+                      <path
+                        d="M20.2 13.4C18.6 11 16.3 9.6 13.7 9.6C9.4 9.6 6 13.3 6 18C6 22.7 9.4 26.4 13.7 26.4C16.3 26.4 18.6 25 20.2 22.6C21.8 25 24.1 26.4 26.7 26.4C31 26.4 34.4 22.7 34.4 18C34.4 13.3 31 9.6 26.7 9.6C24.1 9.6 21.8 11 20.2 13.4ZM13.7 23.3C10.9 23.3 8.7 20.9 8.7 18C8.7 15.1 10.9 12.7 13.7 12.7C15.6 12.7 17.3 13.8 18.5 15.6C18.1 16.3 17.6 17.1 17 17.9C16.1 19.1 15.1 20.4 14.2 21.7C14 22 13.9 22.4 13.7 22.8C13.7 23 13.7 23.1 13.7 23.3ZM26.7 23.3C23.9 23.3 21.7 20.9 21.7 18C21.7 15.1 23.9 12.7 26.7 12.7C29.5 12.7 31.7 15.1 31.7 18C31.7 20.9 29.5 23.3 26.7 23.3Z"
+                        fill="#0064E0"
+                      />
+                    </svg>
+                    <span>Meta Verified Integration</span>
+                  </div>
+                </>
+              )
             )}
 
             {step === 'select' && (
