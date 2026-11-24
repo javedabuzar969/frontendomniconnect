@@ -169,7 +169,6 @@ export default function SettingsPage() {
   const [connectModal, setConnectModal] = useState({ open: false, channelId: null, accountInput: '', waPhoneNumberId: '', waWabaId: '', waAccessToken: '' });
   const [connectLoading, setConnectLoading] = useState(false);
   const [showInstagramModal, setShowInstagramModal] = useState(false);
-  const [fbTurnedOffDismissed, setFbTurnedOffDismissed] = useState(false);
 
   // Channel Connection States (for all 7 channels)
   const [channelStatus, setChannelStatus] = useState({
@@ -873,24 +872,6 @@ export default function SettingsPage() {
 
       {/* Main Content Area */}
       <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 min-w-0 bg-[#fbfbfb]">
-        {/* Facebook channel turned off top banner matching Screenshot 1 */}
-        {activeTab === 'messenger' && !channelStatus.messenger?.connected && !fbTurnedOffDismissed && (
-          <div className="max-w-5xl mx-auto mb-4 bg-[#18181b] text-white px-4 py-2.5 rounded-xl flex items-center justify-between text-xs font-medium shadow-sm animate-fade-in">
-            <div className="flex items-center gap-2.5">
-              <div className="w-4 h-4 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center">
-                <Check size={12} strokeWidth={2.5} />
-              </div>
-              <span>Facebook channel was turned off</span>
-            </div>
-            <button
-              onClick={() => setFbTurnedOffDismissed(true)}
-              className="text-slate-400 hover:text-white transition-colors cursor-pointer p-0.5"
-              title="Dismiss"
-            >
-              <X size={15} />
-            </button>
-          </div>
-        )}
         {/* ==================================================================== */}
         {/* 1. SCREENSHOT 1: NOTIFICATIONS VIEW                                  */}
         {/* ==================================================================== */}
